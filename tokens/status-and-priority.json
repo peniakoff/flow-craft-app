@@ -1,0 +1,48 @@
+{
+    "status": [
+        {
+            "key": "todo",
+            "label": "To do",
+            "icon": "circle",
+            "aria": "To do"
+        },
+        {
+            "key": "in-progress",
+            "label": "In progress",
+            "icon": "spinner",
+            "aria": "In progress"
+        },
+        {
+            "key": "review",
+            "label": "In review",
+            "icon": "eye",
+            "aria": "In review"
+        },
+        {
+            "key": "done",
+            "label": "Done",
+            "icon": "check",
+            "aria": "Done"
+        }
+    ],
+    "priority": [
+        {
+            "key": "low",
+            "label": "Low",
+            "icon": "arrow-down",
+            "aria": "Low priority"
+        },
+        {
+            "key": "medium",
+            "label": "Medium",
+            "icon": "dash",
+            "aria": "Medium priority"
+        },
+        {
+            "key": "high",
+            "label": "High",
+            "icon": "alert-circle",
+            "aria": "High priority"
+        }
+    ]
+}

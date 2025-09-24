@@ -1,0 +1,106 @@
+{
+    "colors": {
+        "neutral": {
+            "0": "#ffffff",
+            "100": "#f5f7fa",
+            "200": "#eef2f6",
+            "300": "#e0e6ef",
+            "400": "#c7d0dd",
+            "500": "#9aa6b8",
+            "600": "#69707a",
+            "700": "#47535c",
+            "800": "#2b3440",
+            "900": "#0f1418"
+        },
+        "brand": {
+            "50": "#eaf4ff",
+            "100": "#d6eaff",
+            "200": "#add5ff",
+            "300": "#85c1ff",
+            "400": "#4fa8ff",
+            "500": "#0066ff",
+            "600": "#0052cc",
+            "700": "#003d99",
+            "800": "#002966",
+            "900": "#001433"
+        },
+        "semantic": {
+            "success": {
+                "bg": "#059669",
+                "text": "#0f1418"
+            },
+            "warning": {
+                "bg": "#d97706",
+                "text": "#0f1418"
+            },
+            "error": {
+                "bg": "#dc2626",
+                "text": "#ffffff"
+            },
+            "info": {
+                "bg": "#0891b2",
+                "text": "#0f1418"
+            }
+        }
+    },
+    "typography": {
+        "fontFamily": {
+            "base": "Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial",
+            "monospace": "ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace"
+        },
+        "scale": {
+            "h1": {
+                "size": 32,
+                "lineHeight": 40,
+                "weight": 700
+            },
+            "h2": {
+                "size": 24,
+                "lineHeight": 32,
+                "weight": 600
+            },
+            "body": {
+                "size": 15,
+                "lineHeight": 22,
+                "weight": 400
+            },
+            "small": {
+                "size": 13,
+                "lineHeight": 18,
+                "weight": 400
+            },
+            "mono": {
+                "size": 13,
+                "lineHeight": 18,
+                "weight": 500
+            }
+        }
+    },
+    "layout": {
+        "spacing": {
+            "xs": 4,
+            "sm": 8,
+            "md": 16,
+            "lg": 24,
+            "xl": 32
+        },
+        "radius": {
+            "sm": 4,
+            "md": 8,
+            "lg": 12,
+            "pill": 9999
+        },
+        "shadows": {
+            "sm": "0 1px 2px rgba(16,24,40,0.05)",
+            "md": "0 6px 18px rgba(16,24,40,0.08)",
+            "lg": "0 20px 40px rgba(16,24,40,0.12)"
+        }
+    },
+    "usage": {
+        "foreground": "colors.neutral.900",
+        "background": "colors.neutral.0",
+        "muted": "colors.neutral.700",
+        "accent": "colors.brand.500",
+        "chip": "colors.semantic"
+    }
+}

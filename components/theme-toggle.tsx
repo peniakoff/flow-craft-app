@@ -5,12 +5,12 @@ import { useEffect, useState } from "react";
 
 interface ThemeToggleProps {
   inline?: boolean; // when true renders without any wrapping div styling
-  showSystemState?: boolean; // whether to show current system value in option label
+  showSystemState?: boolean; // whether to show current system value in option label (opt-in)
 }
 
 export default function ThemeToggle({
   inline = true,
-  showSystemState = true,
+  showSystemState = false,
 }: ThemeToggleProps) {
   const { theme, setTheme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -18,8 +18,6 @@ export default function ThemeToggle({
   useEffect(() => setMounted(true), []);
 
   if (!mounted) return null;
-
-  const current = theme === "system" ? systemTheme : theme;
 
   const select = (
     <select
@@ -30,9 +28,6 @@ export default function ThemeToggle({
     >
       <option value="light">Light</option>
       <option value="dark">Dark</option>
-      <option value="system">
-        System{showSystemState && current ? ` (${current})` : ""}
-      </option>
     </select>
   );
 

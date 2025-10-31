@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { List, Kanban, Calendar, BarChart3 } from "lucide-react";
+import { List, Kanban, Calendar, BarChart3, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/theme-toggle";
 import { useApp } from "@/contexts/app-context";
+import { useAuth } from "@/contexts/auth-context";
 import type { ViewType } from "@/types";
 
 interface NavigationProps {
@@ -16,7 +17,19 @@ interface NavigationProps {
 
 export function Navigation({ currentView }: NavigationProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { issues, sprints, activeSprint } = useApp();
+  const { logout, user } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push("/");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   const activeSprintIssues = issues.filter(
     (issue) => issue.sprintId === activeSprint?.id
@@ -28,7 +41,7 @@ export function Navigation({ currentView }: NavigationProps) {
       label: "Issues",
       icon: List,
       count: issues.length,
-      href: "/issues",
+      href: "/dashboard/issues",
     },
     {
       id: "current-sprint" as ViewType,
@@ -36,21 +49,21 @@ export function Navigation({ currentView }: NavigationProps) {
       icon: Kanban,
       count: activeSprintIssues.length,
       disabled: !activeSprint,
-      href: "/current-sprint",
+      href: "/dashboard/current-sprint",
     },
     {
       id: "sprints" as ViewType,
       label: "Sprints",
       icon: Calendar,
       count: sprints.length,
-      href: "/sprints",
+      href: "/dashboard/sprints",
     },
     {
       id: "analytics" as const,
       label: "Analytics",
       icon: BarChart3,
       count: issues.filter((i) => i.status === "Done").length,
-      href: "/analytics",
+      href: "/dashboard/analytics",
     },
   ];
 
@@ -59,7 +72,10 @@ export function Navigation({ currentView }: NavigationProps) {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center space-x-8">
-            <Link href="/issues" className="flex items-center space-x-2">
+            <Link
+              href="/dashboard/issues"
+              className="flex items-center space-x-2"
+            >
               <img
                 src="/flowcraft-logo.png"
                 alt="FlowCraft Logo"
@@ -111,9 +127,25 @@ export function Navigation({ currentView }: NavigationProps) {
           </div>
 
           <div className="flex items-center gap-4">
-            {!activeSprint && pathname === "/current-sprint" && (
+            {!activeSprint && pathname === "/dashboard/current-sprint" && (
               <div className="text-sm text-muted-foreground">
                 No active sprint
+              </div>
+            )}
+            {user && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground hidden md:block">
+                  {user.name || user.email}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden md:inline">Log Out</span>
+                </Button>
               </div>
             )}
             <ThemeToggle />

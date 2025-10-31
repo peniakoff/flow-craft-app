@@ -1,78 +1,121 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import type { Issue, Priority, IssueStatus, Sprint } from "@/types"
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import type { Issue, Priority, IssueStatus, Sprint } from "@/types";
+import { useApp } from "@/contexts/app-context";
+import { teams } from "@/lib/appwrite";
+import type { Models } from "appwrite";
 
 interface IssueFormProps {
-  issue?: Issue
-  sprints: Sprint[]
-  onSubmit: (issueData: Partial<Issue>) => void
-  trigger?: React.ReactNode
+  issue?: Issue;
+  sprints: Sprint[];
+  onSubmit: (issueData: Partial<Issue>) => void;
+  trigger?: React.ReactNode;
 }
 
-export function IssueForm({ issue, sprints, onSubmit, trigger }: IssueFormProps) {
-  const [open, setOpen] = useState(false)
+export function IssueForm({
+  issue,
+  sprints,
+  onSubmit,
+  trigger,
+}: IssueFormProps) {
+  const [open, setOpen] = useState(false);
+  const { selectedTeamId } = useApp();
+  const [teamMembers, setTeamMembers] = useState<Models.Membership[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
+
   const [formData, setFormData] = useState({
     title: issue?.title || "",
     description: issue?.description || "",
-    priority: issue?.priority || ("P3" as Priority),
+    priority: issue?.priority || 3,
     status: issue?.status || ("Todo" as IssueStatus),
-    assignee: issue?.assignee || "",
-    sprintId: issue?.sprintId || "0", // Updated default value to be a non-empty string
-  })
-  const [errors, setErrors] = useState<Record<string, string>>({})
+    assignedUserId: issue?.assignedUserId || "",
+    sprintId: issue?.sprintId || "0",
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Fetch team members when dialog opens and team is selected
+  useEffect(() => {
+    if (open && selectedTeamId) {
+      setLoadingMembers(true);
+      teams
+        .listMemberships(selectedTeamId)
+        .then((response) => {
+          setTeamMembers(response.memberships);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch team members:", error);
+        })
+        .finally(() => {
+          setLoadingMembers(false);
+        });
+    }
+  }, [open, selectedTeamId]);
 
   const validateForm = () => {
-    const newErrors: Record<string, string> = {}
+    const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "Title is required"
-    }
-    if (!formData.assignee.trim()) {
-      newErrors.assignee = "Assignee is required"
+      newErrors.title = "Title is required";
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (!validateForm()) {
-      return
+      return;
     }
 
     onSubmit({
+      ...(issue?.$id && { $id: issue.$id }), // Preserve ID for existing issues
       ...formData,
-      sprintId: formData.sprintId === "0" ? undefined : formData.sprintId, // Handle the non-empty default value
-    })
+      sprintId: formData.sprintId === "0" ? undefined : formData.sprintId,
+      assignedUserId: formData.assignedUserId || undefined,
+    });
 
-    setOpen(false)
+    setOpen(false);
     if (!issue) {
       // Reset form for new issues
       setFormData({
         title: "",
         description: "",
-        priority: "P3",
+        priority: 3,
         status: "Todo",
-        assignee: "",
-        sprintId: "0", // Reset to non-empty default value
-      })
+        assignedUserId: "",
+        sprintId: "0",
+      });
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{trigger || <Button>Create Issue</Button>}</DialogTrigger>
+      <DialogTrigger asChild>
+        {trigger || <Button>Create Issue</Button>}
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{issue ? "Edit Issue" : "Create New Issue"}</DialogTitle>
@@ -83,11 +126,15 @@ export function IssueForm({ issue, sprints, onSubmit, trigger }: IssueFormProps)
             <Input
               id="title"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               placeholder="Enter issue title"
               className={errors.title ? "border-red-500" : ""}
             />
-            {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
+            {errors.title && (
+              <p className="text-sm text-red-500">{errors.title}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -95,7 +142,9 @@ export function IssueForm({ issue, sprints, onSubmit, trigger }: IssueFormProps)
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               placeholder="Enter issue description"
               rows={3}
             />
@@ -105,19 +154,20 @@ export function IssueForm({ issue, sprints, onSubmit, trigger }: IssueFormProps)
             <div className="space-y-2">
               <Label htmlFor="priority">Priority</Label>
               <Select
-                value={formData.priority}
-                onValueChange={(value: Priority) => setFormData({ ...formData, priority: value })}
+                value={String(formData.priority)}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, priority: Number(value) })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="P0">P0 - Critical</SelectItem>
-                  <SelectItem value="P1">P1 - High</SelectItem>
-                  <SelectItem value="P2">P2 - Medium</SelectItem>
-                  <SelectItem value="P3">P3 - Normal</SelectItem>
-                  <SelectItem value="P4">P4 - Low</SelectItem>
-                  <SelectItem value="P5">P5 - Lowest</SelectItem>
+                  <SelectItem value="1">P1 - Critical</SelectItem>
+                  <SelectItem value="2">P2 - High</SelectItem>
+                  <SelectItem value="3">P3 - Normal</SelectItem>
+                  <SelectItem value="4">P4 - Low</SelectItem>
+                  <SelectItem value="5">P5 - Lowest</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -126,7 +176,9 @@ export function IssueForm({ issue, sprints, onSubmit, trigger }: IssueFormProps)
               <Label htmlFor="status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value: IssueStatus) => setFormData({ ...formData, status: value })}
+                onValueChange={(value: IssueStatus) =>
+                  setFormData({ ...formData, status: value })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -142,29 +194,51 @@ export function IssueForm({ issue, sprints, onSubmit, trigger }: IssueFormProps)
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="assignee">Assignee</Label>
-            <Input
-              id="assignee"
-              value={formData.assignee}
-              onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
-              placeholder="Enter assignee name"
-              className={errors.assignee ? "border-red-500" : ""}
-            />
-            {errors.assignee && <p className="text-sm text-red-500">{errors.assignee}</p>}
+            <Label htmlFor="assignee">Assignee (Optional)</Label>
+            <Select
+              value={formData.assignedUserId || "unassigned"}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  assignedUserId: value === "unassigned" ? "" : value,
+                })
+              }
+              disabled={loadingMembers}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    loadingMembers ? "Loading members..." : "Select assignee"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {teamMembers.map((member) => (
+                  <SelectItem key={member.userId} value={member.userId}>
+                    {member.userName} ({member.userEmail})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="sprint">Sprint (Optional)</Label>
-            <Select value={formData.sprintId} onValueChange={(value) => setFormData({ ...formData, sprintId: value })}>
+            <Select
+              value={formData.sprintId}
+              onValueChange={(value) =>
+                setFormData({ ...formData, sprintId: value })
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select sprint" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">No Sprint (Backlog)</SelectItem>{" "}
-                {/* Updated value prop to be a non-empty string */}
+                <SelectItem value="0">No Sprint (Backlog)</SelectItem>
                 {sprints.map((sprint) => (
-                  <SelectItem key={sprint.id} value={sprint.id}>
-                    {sprint.name} ({sprint.status})
+                  <SelectItem key={sprint.$id} value={sprint.$id || ""}>
+                    {sprint.sprintTitle} ({sprint.sprintStatus})
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -172,13 +246,19 @@ export function IssueForm({ issue, sprints, onSubmit, trigger }: IssueFormProps)
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setOpen(false)}
+            >
               Cancel
             </Button>
-            <Button type="submit">{issue ? "Update Issue" : "Create Issue"}</Button>
+            <Button type="submit">
+              {issue ? "Update Issue" : "Create Issue"}
+            </Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React from "react";
 
 type AvatarProps = {
@@ -11,7 +12,7 @@ export const Avatar = ({ src, alt = "avatar", size = "md" }: AvatarProps) => {
   return (
     <div className={cls} role="img" aria-label={alt}>
       {src ? (
-        <img src={src} alt={alt} className="avatar__img" />
+        <Image src={src} alt={alt} className="avatar__img" />
       ) : (
         <div
           style={{

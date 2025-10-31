@@ -43,8 +43,8 @@ export function KanbanBoard({
 
   useEffect(() => {
     setMounted(true);
-    setSprintIssues(issues.filter((issue) => issue.sprintId === sprint.id));
-  }, [issues, sprint.id]);
+    setSprintIssues(issues.filter((issue) => issue.sprintId === sprint.$id));
+  }, [issues, sprint.$id]);
 
   const handleDragEnd = (result: DropResult) => {
     const { destination, source, draggableId } = result;
@@ -73,7 +73,7 @@ export function KanbanBoard({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold">Kanban Board</h2>
-          <p className="text-sm text-muted-foreground">{sprint.name}</p>
+          <p className="text-sm text-muted-foreground">{sprint.sprintTitle}</p>
         </div>
         <Badge
           className="bg-green-100 text-green-800 border-green-200"
@@ -115,8 +115,8 @@ export function KanbanBoard({
                       <div className="space-y-3">
                         {columnIssues.map((issue, index) => (
                           <Draggable
-                            key={issue.id}
-                            draggableId={issue.id}
+                            key={issue.$id || index}
+                            draggableId={issue.$id || String(index)}
                             index={index}
                           >
                             {(provided, snapshot) => (
@@ -137,7 +137,7 @@ export function KanbanBoard({
                                       <div className="space-y-1">
                                         <div className="flex items-center gap-2">
                                           <span className="text-xs font-mono text-muted-foreground">
-                                            {issue.id}
+                                            {issue.$id}
                                           </span>
                                           <Badge
                                             className={
@@ -145,7 +145,7 @@ export function KanbanBoard({
                                             }
                                             variant="secondary"
                                           >
-                                            {issue.priority}
+                                            P{issue.priority}
                                           </Badge>
                                         </div>
                                         <h4 className="font-medium text-sm leading-tight line-clamp-2">
@@ -161,9 +161,11 @@ export function KanbanBoard({
                                       </p>
                                     )}
                                     <div className="flex items-center justify-between">
-                                      <span className="text-xs text-muted-foreground">
-                                        {issue.assignee}
-                                      </span>
+                                      {issue.assignedUserId && (
+                                        <span className="text-xs text-muted-foreground">
+                                          Assigned
+                                        </span>
+                                      )}
                                     </div>
                                   </CardContent>
                                 </Card>

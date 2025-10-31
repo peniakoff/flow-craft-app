@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { login } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { AppwriteException } from "appwrite";
 
 const loginSchema = z.object({
@@ -29,8 +29,16 @@ export function LoginForm({
   redirectTo = "/dashboard/issues",
 }: LoginFormProps) {
   const router = useRouter();
+  const { login, user, loading } = useAuth();
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      router.push(redirectTo);
+    }
+  }, [user, loading, router, redirectTo]);
 
   const {
     register,
@@ -45,23 +53,31 @@ export function LoginForm({
     setError("");
 
     try {
-      await login(data);
+      await login(data.email, data.password);
 
       if (onSuccess) {
         onSuccess();
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      // Wait a bit for the auth context to update, then redirect
+      setTimeout(() => {
+        router.push(redirectTo);
+        router.refresh();
+      }, 100);
     } catch (err) {
+      console.error("Login error:", err);
       if (err instanceof AppwriteException) {
-        setError(
-          err.message || "Failed to log in. Please check your credentials."
-        );
+        // Handle specific error codes
+        if (err.code === 401) {
+          setError("Invalid email or password. Please check your credentials.");
+        } else {
+          setError(
+            err.message || "Failed to log in. Please check your credentials."
+          );
+        }
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
-    } finally {
       setIsLoading(false);
     }
   };

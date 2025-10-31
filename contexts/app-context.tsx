@@ -1,196 +1,344 @@
-"use client"
+"use client";
 
-import { createContext, useContext, useState, type ReactNode } from "react"
-import { initialIssues, initialSprints, generateTaskId } from "@/lib/data"
-import type { Issue, Sprint, IssueStatus } from "@/types"
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+import type { Issue, Sprint } from "@/types";
+import {
+  fetchIssuesByTeamId,
+  fetchSprintsByTeamId,
+  createIssue as createIssueAPI,
+  updateIssue as updateIssueAPI,
+  deleteIssue as deleteIssueAPI,
+  createSprint as createSprintAPI,
+  updateSprint as updateSprintAPI,
+  deleteSprint as deleteSprintAPI,
+} from "@/lib/data";
+import { useAuth } from "@/contexts/auth-context";
 
 interface AppContextType {
-  // State
-  issues: Issue[]
-  sprints: Sprint[]
-
-  // Issue management functions
-  handleCreateIssue: (issueData: Partial<Issue>) => void
-  handleEditIssue: (updatedIssue: Issue) => void
-  handleDeleteIssue: (issueId: string) => void
-  handleUpdateIssueStatus: (issueId: string, newStatus: IssueStatus) => void
-  handleAssignToSprint: (issueId: string, sprintId: string | undefined) => void
-
-  // Sprint management functions
-  handleCreateSprint: (sprintData: Partial<Sprint>) => void
-  handleEditSprint: (updatedSprint: Sprint) => void
-  handleStartSprint: (sprintId: string) => void
-  handleEndSprint: (sprintId: string) => void
-
-  // Computed values
-  activeSprint: Sprint | undefined
+  issues: Issue[];
+  sprints: Sprint[];
+  activeSprint: Sprint | null;
+  selectedTeamId: string | null;
+  loading: boolean;
+  setIssues: (issues: Issue[]) => void;
+  setSprints: (sprints: Sprint[]) => void;
+  setActiveSprint: (sprint: Sprint | null) => void;
+  setSelectedTeamId: (teamId: string | null) => void;
+  loadIssues: (teamId: string) => Promise<void>;
+  loadSprints: (teamId: string) => Promise<void>;
+  loadTeamData: (teamId: string) => Promise<void>;
+  handleCreateIssue: (issueData: Partial<Issue>) => Promise<void>;
+  handleEditIssue: (issue: Issue) => Promise<void>;
+  handleDeleteIssue: (issueId: string) => Promise<void>;
+  handleAssignToSprint: (
+    issueId: string,
+    sprintId: string | undefined
+  ) => Promise<void>;
+  handleCreateSprint: (sprintData: Partial<Sprint>) => Promise<void>;
+  handleEditSprint: (sprint: Sprint) => Promise<void>;
+  handleStartSprint: (sprintId: string) => Promise<void>;
+  handleEndSprint: (sprintId: string) => Promise<void>;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined)
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
-export function AppProvider({ children }: { children: ReactNode }) {
-  const [issues, setIssues] = useState<Issue[]>(initialIssues)
-  const [sprints, setSprints] = useState<Sprint[]>(initialSprints)
+const SELECTED_TEAM_KEY = "flowcraft-selected-team-id";
 
-  // Issue management functions
-  const handleCreateIssue = (issueData: Partial<Issue>) => {
-    const newIssue: Issue = {
-      id: generateTaskId(issues),
-      title: issueData.title || "",
-      description: issueData.description || "",
-      priority: issueData.priority || "P3",
-      status: issueData.status || "Todo",
-      assignee: issueData.assignee || "",
-      sprintId: issueData.sprintId,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+export function AppProvider({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [sprints, setSprints] = useState<Sprint[]>([]);
+  const [activeSprint, setActiveSprint] = useState<Sprint | null>(null);
+  const [selectedTeamId, setSelectedTeamIdState] = useState<string | null>(
+    null
+  );
+  const [loading, setLoading] = useState(false);
+
+  // Load selectedTeamId from localStorage only when user is authenticated
+  useEffect(() => {
+    if (!authLoading && user) {
+      const savedTeamId = localStorage.getItem(SELECTED_TEAM_KEY);
+      if (savedTeamId) {
+        setSelectedTeamIdState(savedTeamId);
+      }
+    } else if (!authLoading && !user) {
+      // Clear selected team if user is not authenticated
+      setSelectedTeamIdState(null);
     }
-    setIssues([...issues, newIssue])
-  }
+  }, [user, authLoading]);
 
-  const handleEditIssue = (updatedIssue: Issue) => {
-    setIssues(
-      issues.map((issue) =>
-        issue.id === updatedIssue.id
-          ? {
-              ...issue,
-              ...updatedIssue,
-              updatedAt: new Date(),
-            }
-          : issue,
-      ),
-    )
-  }
-
-  const handleDeleteIssue = (issueId: string) => {
-    setIssues(issues.filter((issue) => issue.id !== issueId))
-  }
-
-  const handleUpdateIssueStatus = (issueId: string, newStatus: IssueStatus) => {
-    setIssues(
-      issues.map((issue) =>
-        issue.id === issueId
-          ? {
-              ...issue,
-              status: newStatus,
-              updatedAt: new Date(),
-            }
-          : issue,
-      ),
-    )
-  }
-
-  const handleAssignToSprint = (issueId: string, sprintId: string | undefined) => {
-    setIssues(
-      issues.map((issue) =>
-        issue.id === issueId
-          ? {
-              ...issue,
-              sprintId,
-              updatedAt: new Date(),
-            }
-          : issue,
-      ),
-    )
-  }
-
-  // Sprint management functions
-  const handleCreateSprint = (sprintData: Partial<Sprint>) => {
-    const newSprint: Sprint = {
-      id: `sprint-${Date.now()}`,
-      name: sprintData.name || "",
-      status: "Planned",
-      startDate: sprintData.startDate || new Date(),
-      endDate: sprintData.endDate || new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
+  // Wrapper function to save to localStorage when setting selectedTeamId
+  const setSelectedTeamId = useCallback((teamId: string | null) => {
+    setSelectedTeamIdState(teamId);
+    if (teamId) {
+      localStorage.setItem(SELECTED_TEAM_KEY, teamId);
+    } else {
+      localStorage.removeItem(SELECTED_TEAM_KEY);
     }
-    setSprints([...sprints, newSprint])
-  }
+  }, []);
 
-  const handleEditSprint = (updatedSprint: Sprint) => {
-    setSprints(
-      sprints.map((sprint) =>
-        sprint.id === updatedSprint.id
-          ? {
-              ...sprint,
-              ...updatedSprint,
-              updatedAt: new Date(),
-            }
-          : sprint,
-      ),
-    )
-  }
+  /**
+   * Load issues for a specific team
+   */
+  const loadIssues = useCallback(async (teamId: string) => {
+    try {
+      setLoading(true);
+      const fetchedIssues = await fetchIssuesByTeamId(teamId);
+      setIssues(fetchedIssues);
+    } catch (error) {
+      console.error("Failed to load issues:", error);
+      setIssues([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const handleStartSprint = (sprintId: string) => {
-    setSprints(
-      sprints.map((sprint) =>
-        sprint.id === sprintId
-          ? {
-              ...sprint,
-              status: "Active" as const,
-              updatedAt: new Date(),
-            }
-          : sprint,
-      ),
-    )
-  }
+  /**
+   * Load sprints for a specific team
+   */
+  const loadSprints = useCallback(async (teamId: string) => {
+    try {
+      setLoading(true);
+      const fetchedSprints = await fetchSprintsByTeamId(teamId);
+      setSprints(fetchedSprints);
 
-  const handleEndSprint = (sprintId: string) => {
-    // Move unfinished issues back to backlog
-    const unfinishedIssues = issues.filter((issue) => issue.sprintId === sprintId && issue.status !== "Done")
+      // Find and set active sprint
+      const active = fetchedSprints.find(
+        (sprint) => sprint.sprintStatus === "Active"
+      );
+      setActiveSprint(active || null);
+    } catch (error) {
+      console.error("Failed to load sprints:", error);
+      setSprints([]);
+      setActiveSprint(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    setIssues(
-      issues.map((issue) =>
-        unfinishedIssues.some((ui) => ui.id === issue.id)
-          ? {
-              ...issue,
-              sprintId: undefined,
-              updatedAt: new Date(),
-            }
-          : issue,
-      ),
-    )
+  /**
+   * Load all data (issues and sprints) for a specific team
+   */
+  const loadTeamData = useCallback(
+    async (teamId: string) => {
+      try {
+        setLoading(true);
+        await Promise.all([loadIssues(teamId), loadSprints(teamId)]);
+      } catch (error) {
+        console.error("Failed to load team data:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadIssues, loadSprints]
+  );
 
-    // Update sprint status
-    setSprints(
-      sprints.map((sprint) =>
-        sprint.id === sprintId
-          ? {
-              ...sprint,
-              status: "Completed" as const,
-              updatedAt: new Date(),
-            }
-          : sprint,
-      ),
-    )
-  }
+  /**
+   * Load data when selectedTeamId changes and user is authenticated
+   */
+  useEffect(() => {
+    if (!authLoading && user && selectedTeamId) {
+      loadTeamData(selectedTeamId);
+    } else if (!user || !selectedTeamId) {
+      // Clear data when no team is selected or user is not authenticated
+      setIssues([]);
+      setSprints([]);
+      setActiveSprint(null);
+    }
+  }, [user, authLoading, selectedTeamId, loadTeamData]);
 
-  // Computed values
-  const activeSprint = sprints.find((sprint) => sprint.status === "Active")
+  /**
+   * Create a new issue
+   */
+  const handleCreateIssue = useCallback(
+    async (issueData: Partial<Issue> & { assignee?: string }) => {
+      if (!selectedTeamId) {
+        throw new Error("No team selected");
+      }
 
-  const value: AppContextType = {
-    issues,
-    sprints,
-    handleCreateIssue,
-    handleEditIssue,
-    handleDeleteIssue,
-    handleUpdateIssueStatus,
-    handleAssignToSprint,
-    handleCreateSprint,
-    handleEditSprint,
-    handleStartSprint,
-    handleEndSprint,
-    activeSprint,
-  }
+      // Create clean object with only valid database fields
+      const newIssueData = {
+        teamId: selectedTeamId,
+        status: issueData.status || "Todo",
+        priority: Number(issueData.priority) || 3,
+        title: issueData.title || "",
+        description: issueData.description || "",
+        sprintId: issueData.sprintId || "",
+        assignedUserId: issueData.assignedUserId || undefined,
+      } as Omit<
+        Issue,
+        | "$id"
+        | "$createdAt"
+        | "$updatedAt"
+        | "$permissions"
+        | "$databaseId"
+        | "$collectionId"
+      >;
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>
+      const createdIssue = await createIssueAPI(newIssueData);
+      setIssues([...issues, createdIssue]);
+    },
+    [selectedTeamId, issues]
+  );
+
+  /**
+   * Edit an existing issue
+   */
+  const handleEditIssue = useCallback(
+    async (issue: Issue) => {
+      if (!issue.$id) {
+        throw new Error("Issue ID is required");
+      }
+
+      const updatedIssue = await updateIssueAPI(issue.$id, issue);
+      setIssues(issues.map((i) => (i.$id === issue.$id ? updatedIssue : i)));
+    },
+    [issues]
+  );
+
+  /**
+   * Delete an issue
+   */
+  const handleDeleteIssue = useCallback(
+    async (issueId: string) => {
+      await deleteIssueAPI(issueId);
+      setIssues(issues.filter((i) => i.$id !== issueId));
+    },
+    [issues]
+  );
+
+  /**
+   * Assign issue to sprint
+   */
+  const handleAssignToSprint = useCallback(
+    async (issueId: string, sprintId: string | undefined) => {
+      const updatedIssue = await updateIssueAPI(issueId, {
+        sprintId: sprintId || "",
+      });
+      setIssues(issues.map((i) => (i.$id === issueId ? updatedIssue : i)));
+    },
+    [issues]
+  );
+
+  /**
+   * Create a new sprint
+   */
+  const handleCreateSprint = useCallback(
+    async (sprintData: Partial<Sprint>) => {
+      if (!selectedTeamId) {
+        throw new Error("No team selected");
+      }
+
+      const newSprintData = {
+        ...sprintData,
+        teamId: selectedTeamId,
+        sprintStatus: sprintData.sprintStatus || "Planned",
+        sprintTitle: sprintData.sprintTitle || "",
+        startDate: sprintData.startDate || new Date().toISOString(),
+        endDate: sprintData.endDate || new Date().toISOString(),
+      } as Omit<
+        Sprint,
+        | "$id"
+        | "$createdAt"
+        | "$updatedAt"
+        | "$permissions"
+        | "$databaseId"
+        | "$collectionId"
+      >;
+
+      const createdSprint = await createSprintAPI(newSprintData);
+      setSprints([...sprints, createdSprint]);
+    },
+    [selectedTeamId, sprints]
+  );
+
+  /**
+   * Edit an existing sprint
+   */
+  const handleEditSprint = useCallback(
+    async (sprint: Sprint) => {
+      if (!sprint.$id) {
+        throw new Error("Sprint ID is required");
+      }
+
+      const updatedSprint = await updateSprintAPI(sprint.$id, sprint);
+      setSprints(
+        sprints.map((s) => (s.$id === sprint.$id ? updatedSprint : s))
+      );
+    },
+    [sprints]
+  );
+
+  /**
+   * Start a sprint (set status to Active)
+   */
+  const handleStartSprint = useCallback(
+    async (sprintId: string) => {
+      const updatedSprint = await updateSprintAPI(sprintId, {
+        sprintStatus: "Active",
+      });
+      setSprints(sprints.map((s) => (s.$id === sprintId ? updatedSprint : s)));
+      setActiveSprint(updatedSprint);
+    },
+    [sprints]
+  );
+
+  /**
+   * End a sprint (set status to Completed)
+   */
+  const handleEndSprint = useCallback(
+    async (sprintId: string) => {
+      const updatedSprint = await updateSprintAPI(sprintId, {
+        sprintStatus: "Completed",
+      });
+      setSprints(sprints.map((s) => (s.$id === sprintId ? updatedSprint : s)));
+      if (activeSprint?.$id === sprintId) {
+        setActiveSprint(null);
+      }
+    },
+    [sprints, activeSprint]
+  );
+
+  return (
+    <AppContext.Provider
+      value={{
+        issues,
+        sprints,
+        activeSprint,
+        selectedTeamId,
+        loading,
+        setIssues,
+        setSprints,
+        setActiveSprint,
+        setSelectedTeamId,
+        loadIssues,
+        loadSprints,
+        loadTeamData,
+        handleCreateIssue,
+        handleEditIssue,
+        handleDeleteIssue,
+        handleAssignToSprint,
+        handleCreateSprint,
+        handleEditSprint,
+        handleStartSprint,
+        handleEndSprint,
+      }}
+    >
+      {children}
+    </AppContext.Provider>
+  );
 }
 
 export function useApp() {
-  const context = useContext(AppContext)
+  const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error("useApp must be used within an AppProvider")
+    throw new Error("useApp must be used within an AppProvider");
   }
-  return context
+  return context;
 }

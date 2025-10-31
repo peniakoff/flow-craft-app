@@ -1,10 +1,15 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Edit, Trash2, ArrowUpDown } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, Edit, Trash2, ArrowUpDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,23 +20,30 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { IssueForm } from "./issue-form"
-import { IssueAssignmentDialog } from "./issue-assignment-dialog"
-import { priorityColors, statusColors } from "@/lib/data"
-import type { Issue, Sprint } from "@/types"
+} from "@/components/ui/alert-dialog";
+import { IssueForm } from "./issue-form";
+import { IssueAssignmentDialog } from "./issue-assignment-dialog";
+import { priorityColors, statusColors } from "@/lib/data";
+import type { Issue, Sprint } from "@/types";
 
 interface IssueCardProps {
-  issue: Issue
-  sprints: Sprint[]
-  onEdit: (issue: Issue) => void
-  onDelete: (issueId: string) => void
-  onAssignToSprint: (issueId: string, sprintId: string | undefined) => void
-  showSprint?: boolean
+  issue: Issue;
+  sprints: Sprint[];
+  onEdit: (issueData: Partial<Issue>) => void;
+  onDelete: (issueId: string) => void;
+  onAssignToSprint: (issueId: string, sprintId: string | undefined) => void;
+  showSprint?: boolean;
 }
 
-export function IssueCard({ issue, sprints, onEdit, onDelete, onAssignToSprint, showSprint = true }: IssueCardProps) {
-  const sprint = sprints.find((s) => s.id === issue.sprintId)
+export function IssueCard({
+  issue,
+  sprints,
+  onEdit,
+  onDelete,
+  onAssignToSprint,
+  showSprint = true,
+}: IssueCardProps) {
+  const sprint = sprints.find((s) => s.$id === issue.sprintId);
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -39,9 +51,14 @@ export function IssueCard({ issue, sprints, onEdit, onDelete, onAssignToSprint, 
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-mono text-muted-foreground">{issue.id}</span>
-              <Badge className={priorityColors[issue.priority]} variant="secondary">
-                {issue.priority}
+              <span className="text-sm font-mono text-muted-foreground">
+                {issue.$id}
+              </span>
+              <Badge
+                className={priorityColors[issue.priority]}
+                variant="secondary"
+              >
+                P{issue.priority}
               </Badge>
             </div>
             <h3 className="font-medium leading-tight">{issue.title}</h3>
@@ -86,12 +103,16 @@ export function IssueCard({ issue, sprints, onEdit, onDelete, onAssignToSprint, 
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Issue</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete "{issue.title}"? This action cannot be undone.
+                      Are you sure you want to delete "{issue.title}"? This
+                      action cannot be undone.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(issue.id)} className="bg-red-500 hover:bg-red-600">
+                    <AlertDialogAction
+                      onClick={() => onDelete(issue.$id || "")}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
                       Delete
                     </AlertDialogAction>
                   </AlertDialogFooter>
@@ -102,7 +123,11 @@ export function IssueCard({ issue, sprints, onEdit, onDelete, onAssignToSprint, 
         </div>
       </CardHeader>
       <CardContent className="pt-0">
-        {issue.description && <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{issue.description}</p>}
+        {issue.description && (
+          <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+            {issue.description}
+          </p>
+        )}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Badge className={statusColors[issue.status]} variant="outline">
@@ -110,18 +135,23 @@ export function IssueCard({ issue, sprints, onEdit, onDelete, onAssignToSprint, 
             </Badge>
             {showSprint && sprint && (
               <Badge variant="secondary" className="text-xs">
-                {sprint.name}
+                {sprint.sprintTitle}
               </Badge>
             )}
             {showSprint && !sprint && (
-              <Badge variant="outline" className="text-xs text-muted-foreground">
+              <Badge
+                variant="outline"
+                className="text-xs text-muted-foreground"
+              >
                 Backlog
               </Badge>
             )}
           </div>
-          <span className="text-xs text-muted-foreground">{issue.assignee}</span>
+          {issue.assignedUserId && (
+            <span className="text-xs text-muted-foreground">Assigned</span>
+          )}
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

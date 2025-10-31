@@ -1,81 +1,181 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { account } from "@/lib/appwrite";
 import type { Models } from "appwrite";
-import {
-  getCurrentUser,
-  login as authLogin,
-  logout as authLogout,
-  register as authRegister,
-} from "@/lib/auth";
-import type { LoginData, RegisterData } from "@/lib/auth";
+
+export interface User extends Models.User<Models.Preferences> {}
 
 interface AuthContextType {
-  user: Models.User<Models.Preferences> | null;
+  user: User | null;
   loading: boolean;
-  login: (data: LoginData) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
+  updatePassword: (oldPassword: string, newPassword: string) => Promise<void>;
+  updateName: (name: string) => Promise<void>;
+  deleteAccount: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper function to check if Appwrite session exists (in cookies or localStorage)
+function hasAppwriteSession(): boolean {
+  if (typeof window === "undefined") return false;
+
+  // Check for session cookie (production)
+  if (typeof document !== "undefined") {
+    const hasCookie = document.cookie.split(";").some((cookie) => {
+      return cookie.trim().startsWith("a_session_");
+    });
+    if (hasCookie) return true;
+  }
+
+  // Check for localStorage fallback (development/localhost)
+  if (window.localStorage) {
+    const cookieFallback = window.localStorage.getItem("cookieFallback");
+    if (cookieFallback) return true;
+  }
+
+  return false;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<Models.User<Models.Preferences> | null>(
-    null
-  );
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const refreshUser = async () => {
-    try {
-      const currentUser = await getCurrentUser();
-      setUser(currentUser);
-    } catch (error) {
-      setUser(null);
-    }
-  };
-
+  // Check if user is logged in on mount
   useEffect(() => {
-    const initAuth = async () => {
+    const checkUser = async () => {
+      // Only make API call if session cookie exists
+      if (!hasAppwriteSession()) {
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
       try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
+        const response = await account.get();
+        setUser(response as User);
+      } catch (error: any) {
+        // 401 Unauthorized is expected when user is not logged in
+        // Don't log this as an error
+        if (error?.code !== 401) {
+          console.error("Error checking user session:", error);
+        }
         setUser(null);
       } finally {
         setLoading(false);
       }
     };
 
-    initAuth();
+    checkUser();
   }, []);
 
-  const login = async (data: LoginData) => {
-    await authLogin(data);
-    await refreshUser();
-  };
+  const login = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      // Create session
+      await account.createEmailPasswordSession(email, password);
 
-  const register = async (data: RegisterData) => {
-    await authRegister(data);
-    await refreshUser();
+      // Get user data
+      const response = await account.get();
+      setUser(response as User);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {
-    await authLogout();
-    setUser(null);
+    setLoading(true);
+    try {
+      await account.deleteSession("current");
+      setUser(null);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if session deletion fails, clear local state
+      setUser(null);
+    } finally {
+      // Clear localStorage fallback used in development
+      // Appwrite uses 'cookieFallback' key when cookies are not available (e.g., localhost)
+      if (typeof window !== "undefined" && window.localStorage) {
+        window.localStorage.removeItem("cookieFallback");
+      }
+      setLoading(false);
+    }
   };
 
-  const value = {
-    user,
-    loading,
-    login,
-    register,
-    logout,
-    refreshUser,
+  const register = async (email: string, password: string, name: string) => {
+    setLoading(true);
+    try {
+      // Create new user account
+      const response = await account.create(
+        crypto.randomUUID(),
+        email,
+        password,
+        name
+      );
+
+      // Automatically log them in
+      await account.createEmailPasswordSession(email, password);
+
+      // Get user data
+      const userData = await account.get();
+      setUser(userData as User);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const updatePassword = async (oldPassword: string, newPassword: string) => {
+    try {
+      await account.updatePassword(newPassword, oldPassword);
+      // Re-fetch user data to ensure consistency
+      const response = await account.get();
+      setUser(response as User);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const updateName = async (name: string) => {
+    try {
+      await account.updateName(name);
+      // Re-fetch user data
+      const response = await account.get();
+      setUser(response as User);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const deleteAccount = async () => {
+    try {
+      // Note: This requires user to have entered their password recently
+      // You may need to implement re-authentication
+      await account.deleteIdentity("email");
+      setUser(null);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        register,
+        updatePassword,
+        updateName,
+        deleteAccount,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

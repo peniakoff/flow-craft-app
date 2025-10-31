@@ -1,21 +1,27 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { IssueCard } from "./issue-card"
-import { IssueForm } from "./issue-form"
-import { Search, Plus } from "lucide-react"
-import type { Issue, Sprint, Priority, IssueStatus } from "@/types"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { IssueCard } from "./issue-card";
+import { IssueForm } from "./issue-form";
+import { Search, Plus } from "lucide-react";
+import type { Issue, Sprint, Priority, IssueStatus } from "@/types";
 
 interface IssuesListProps {
-  issues: Issue[]
-  sprints: Sprint[]
-  onCreateIssue: (issueData: Partial<Issue>) => void
-  onEditIssue: (issue: Issue) => void
-  onDeleteIssue: (issueId: string) => void
-  onAssignToSprint: (issueId: string, sprintId: string | undefined) => void
+  issues: Issue[];
+  sprints: Sprint[];
+  onCreateIssue: (issueData: Partial<Issue>) => void;
+  onEditIssue: (issueData: Partial<Issue>) => void;
+  onDeleteIssue: (issueId: string) => void;
+  onAssignToSprint: (issueId: string, sprintId: string | undefined) => void;
 }
 
 export function IssuesList({
@@ -26,24 +32,31 @@ export function IssuesList({
   onDeleteIssue,
   onAssignToSprint,
 }: IssuesListProps) {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [priorityFilter, setPriorityFilter] = useState<Priority | "all">("all")
-  const [statusFilter, setStatusFilter] = useState<IssueStatus | "all">("all")
-  const [sprintFilter, setSprintFilter] = useState<string>("all")
+  const [searchTerm, setSearchTerm] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<IssueStatus | "all">("all");
+  const [sprintFilter, setSprintFilter] = useState<string>("all");
 
   const filteredIssues = issues.filter((issue) => {
     const matchesSearch =
       issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      issue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      issue.assignee.toLowerCase().includes(searchTerm.toLowerCase())
+      issue.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      issue.assignedUserId
+        ?.toString()
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
-    const matchesPriority = priorityFilter === "all" || issue.priority === priorityFilter
-    const matchesStatus = statusFilter === "all" || issue.status === statusFilter
+    const matchesPriority =
+      priorityFilter === "all" || issue.priority === Number(priorityFilter);
+    const matchesStatus =
+      statusFilter === "all" || issue.status === statusFilter;
     const matchesSprint =
-      sprintFilter === "all" || (sprintFilter === "backlog" && !issue.sprintId) || issue.sprintId === sprintFilter
+      sprintFilter === "all" ||
+      (sprintFilter === "backlog" && !issue.sprintId) ||
+      issue.sprintId === sprintFilter;
 
-    return matchesSearch && matchesPriority && matchesStatus && matchesSprint
-  })
+    return matchesSearch && matchesPriority && matchesStatus && matchesSprint;
+  });
 
   return (
     <div className="space-y-6">
@@ -73,22 +86,26 @@ export function IssuesList({
         </div>
 
         <div className="flex gap-2">
-          <Select value={priorityFilter} onValueChange={(value: Priority | "all") => setPriorityFilter(value)}>
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Priority" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Priorities</SelectItem>
-              <SelectItem value="P0">P0</SelectItem>
-              <SelectItem value="P1">P1</SelectItem>
-              <SelectItem value="P2">P2</SelectItem>
-              <SelectItem value="P3">P3</SelectItem>
-              <SelectItem value="P4">P4</SelectItem>
-              <SelectItem value="P5">P5</SelectItem>
+              <SelectItem value="1">P1</SelectItem>
+              <SelectItem value="2">P2</SelectItem>
+              <SelectItem value="3">P3</SelectItem>
+              <SelectItem value="4">P4</SelectItem>
+              <SelectItem value="5">P5</SelectItem>
             </SelectContent>
           </Select>
 
-          <Select value={statusFilter} onValueChange={(value: IssueStatus | "all") => setStatusFilter(value)}>
+          <Select
+            value={statusFilter}
+            onValueChange={(value: IssueStatus | "all") =>
+              setStatusFilter(value)
+            }
+          >
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -109,8 +126,8 @@ export function IssuesList({
               <SelectItem value="all">All Sprints</SelectItem>
               <SelectItem value="backlog">Backlog</SelectItem>
               {sprints.map((sprint) => (
-                <SelectItem key={sprint.id} value={sprint.id}>
-                  {sprint.name}
+                <SelectItem key={sprint.$id} value={sprint.$id || ""}>
+                  {sprint.sprintTitle}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -125,7 +142,7 @@ export function IssuesList({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {filteredIssues.map((issue) => (
           <IssueCard
-            key={issue.id}
+            key={issue.$id}
             issue={issue}
             sprints={sprints}
             onEdit={onEditIssue}
@@ -137,9 +154,11 @@ export function IssuesList({
 
       {filteredIssues.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No issues found matching your filters.</p>
+          <p className="text-muted-foreground">
+            No issues found matching your filters.
+          </p>
         </div>
       )}
     </div>
-  )
+  );
 }

@@ -11,6 +11,7 @@ import {
 import { Roboto as V0_Font_Roboto } from "next/font/google";
 import { AppProvider } from "@/contexts/app-context";
 import { AuthProvider } from "@/contexts/auth-context";
+import { TeamsProvider } from "@/contexts/teams-context";
 import { ThemeProvider } from "@/components/theme-provider";
 const GeistMonoFont = V0_Font_Geist_Mono({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -49,9 +50,11 @@ export default function RootLayout({
           enableSystem={false}
         >
           <AuthProvider>
-            <AppProvider>
-              <Suspense fallback={null}>{children}</Suspense>
-            </AppProvider>
+            <TeamsProvider>
+              <AppProvider>
+                <Suspense fallback={null}>{children}</Suspense>
+              </AppProvider>
+            </TeamsProvider>
           </AuthProvider>
         </ThemeProvider>
         <Analytics />

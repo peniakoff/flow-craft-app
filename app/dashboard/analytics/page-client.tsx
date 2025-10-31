@@ -1,10 +1,16 @@
-"use client"
+"use client";
 
-import { useMemo } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useMemo } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart,
   Bar,
@@ -18,44 +24,58 @@ import {
   Cell,
   LineChart,
   Line,
-} from "recharts"
-import { useApp } from "@/contexts/app-context"
-import { Navigation } from "@/components/navigation"
-import { Clock, Users, TrendingUp, CheckCircle, AlertCircle, Calendar } from "lucide-react"
+} from "recharts";
+import { useApp } from "@/contexts/app-context";
+import { Navigation } from "@/components/navigation";
+import {
+  Clock,
+  Users,
+  TrendingUp,
+  CheckCircle,
+  AlertCircle,
+  Calendar,
+} from "lucide-react";
 
 interface EngineerStats {
-  name: string
-  totalTasks: number
-  completedTasks: number
-  inProgressTasks: number
-  todoTasks: number
-  completionRate: number
-  avgTasksPerSprint: number
-  priorityDistribution: Record<string, number>
+  name: string;
+  totalTasks: number;
+  completedTasks: number;
+  inProgressTasks: number;
+  todoTasks: number;
+  completionRate: number;
+  avgTasksPerSprint: number;
+  priorityDistribution: Record<string, number>;
 }
 
 interface SprintPerformance {
-  sprintName: string
-  totalTasks: number
-  completedTasks: number
-  completionRate: number
-  duration: number
+  sprintName: string;
+  totalTasks: number;
+  completedTasks: number;
+  completionRate: number;
+  duration: number;
 }
 
-const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8", "#82CA9D"]
+const COLORS = [
+  "#0088FE",
+  "#00C49F",
+  "#FFBB28",
+  "#FF8042",
+  "#8884D8",
+  "#82CA9D",
+];
 
 export function AnalyticsPageClient() {
-  const { issues, sprints } = useApp()
+  const { issues, sprints } = useApp();
 
   const engineerStats = useMemo((): EngineerStats[] => {
-    const engineerMap = new Map<string, EngineerStats>()
+    const engineerMap = new Map<string, EngineerStats>();
 
     issues.forEach((issue) => {
-      if (!issue.assignee) return
+      if (!issue.assignedUserId) return;
 
-      if (!engineerMap.has(issue.assignee)) {
-        engineerMap.set(issue.assignee, {
-          name: issue.assignee,
+      if (!engineerMap.has(issue.assignedUserId)) {
+        engineerMap.set(issue.assignedUserId, {
+          name: issue.assignedUserId,
           totalTasks: 0,
           completedTasks: 0,
           inProgressTasks: 0,
@@ -63,81 +83,114 @@ export function AnalyticsPageClient() {
           completionRate: 0,
           avgTasksPerSprint: 0,
           priorityDistribution: { P0: 0, P1: 0, P2: 0, P3: 0, P4: 0, P5: 0 },
-        })
+        });
       }
 
-      const stats = engineerMap.get(issue.assignee)!
-      stats.totalTasks++
-      stats.priorityDistribution[issue.priority]++
+      const stats = engineerMap.get(issue.assignedUserId)!;
+      stats.totalTasks++;
+      const priorityKey =
+        `P${issue.priority}` as keyof typeof stats.priorityDistribution;
+      stats.priorityDistribution[priorityKey]++;
 
       switch (issue.status) {
         case "Done":
-          stats.completedTasks++
-          break
+          stats.completedTasks++;
+          break;
         case "In Progress":
         case "In Review":
-          stats.inProgressTasks++
-          break
+          stats.inProgressTasks++;
+          break;
         case "Todo":
-          stats.todoTasks++
-          break
+          stats.todoTasks++;
+          break;
       }
-    })
+    });
 
     // Calculate completion rates and average tasks per sprint
-    const activeSprints = sprints.filter((s) => s.status === "Active" || s.status === "Completed").length || 1
+    const activeSprints =
+      sprints.filter(
+        (s) => s.sprintStatus === "Active" || s.sprintStatus === "Completed"
+      ).length || 1;
 
     return Array.from(engineerMap.values()).map((stats) => ({
       ...stats,
-      completionRate: stats.totalTasks > 0 ? (stats.completedTasks / stats.totalTasks) * 100 : 0,
+      completionRate:
+        stats.totalTasks > 0
+          ? (stats.completedTasks / stats.totalTasks) * 100
+          : 0,
       avgTasksPerSprint: stats.totalTasks / activeSprints,
-    }))
-  }, [issues, sprints])
+    }));
+  }, [issues, sprints]);
 
   const sprintPerformance = useMemo((): SprintPerformance[] => {
     return sprints.map((sprint) => {
-      const sprintIssues = issues.filter((issue) => issue.sprintId === sprint.id)
-      const completedTasks = sprintIssues.filter((issue) => issue.status === "Done").length
-      const duration = Math.ceil((sprint.endDate.getTime() - sprint.startDate.getTime()) / (1000 * 60 * 60 * 24))
+      const sprintIssues = issues.filter(
+        (issue) => issue.sprintId === sprint.$id
+      );
+      const completedTasks = sprintIssues.filter(
+        (issue) => issue.status === "Done"
+      ).length;
+      const duration = Math.ceil(
+        (new Date(sprint.endDate).getTime() -
+          new Date(sprint.startDate).getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
 
       return {
-        sprintName: sprint.name,
+        sprintName: sprint.sprintTitle,
         totalTasks: sprintIssues.length,
         completedTasks,
-        completionRate: sprintIssues.length > 0 ? (completedTasks / sprintIssues.length) * 100 : 0,
+        completionRate:
+          sprintIssues.length > 0
+            ? (completedTasks / sprintIssues.length) * 100
+            : 0,
         duration,
-      }
-    })
-  }, [issues, sprints])
+      };
+    });
+  }, [issues, sprints]);
 
   const priorityDistribution = useMemo(() => {
-    const distribution = { P0: 0, P1: 0, P2: 0, P3: 0, P4: 0, P5: 0 }
+    const distribution: Record<string, number> = {
+      P0: 0,
+      P1: 0,
+      P2: 0,
+      P3: 0,
+      P4: 0,
+      P5: 0,
+    };
     issues.forEach((issue) => {
-      distribution[issue.priority]++
-    })
+      const priorityKey = `P${issue.priority}`;
+      if (priorityKey in distribution) {
+        distribution[priorityKey]++;
+      }
+    });
     return Object.entries(distribution).map(([priority, count]) => ({
       name: priority,
       value: count,
-      percentage: ((count / issues.length) * 100).toFixed(1),
-    }))
-  }, [issues])
+      percentage:
+        issues.length > 0 ? ((count / issues.length) * 100).toFixed(1) : "0.0",
+    }));
+  }, [issues]);
 
   const statusDistribution = useMemo(() => {
-    const distribution = { Todo: 0, "In Progress": 0, "In Review": 0, Done: 0 }
+    const distribution = { Todo: 0, "In Progress": 0, "In Review": 0, Done: 0 };
     issues.forEach((issue) => {
-      distribution[issue.status]++
-    })
+      distribution[issue.status]++;
+    });
     return Object.entries(distribution).map(([status, count]) => ({
       name: status,
       value: count,
       percentage: ((count / issues.length) * 100).toFixed(1),
-    }))
-  }, [issues])
+    }));
+  }, [issues]);
 
-  const totalTasks = issues.length
-  const completedTasks = issues.filter((i) => i.status === "Done").length
-  const inProgressTasks = issues.filter((i) => i.status === "In Progress" || i.status === "In Review").length
-  const overallCompletionRate = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+  const totalTasks = issues.length;
+  const completedTasks = issues.filter((i) => i.status === "Done").length;
+  const inProgressTasks = issues.filter(
+    (i) => i.status === "In Progress" || i.status === "In Review"
+  ).length;
+  const overallCompletionRate =
+    totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,7 +199,10 @@ export function AnalyticsPageClient() {
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-2xl font-semibold">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">Comprehensive insights into team performance and engineer utilization</p>
+          <p className="text-muted-foreground">
+            Comprehensive insights into team performance and engineer
+            utilization
+          </p>
         </div>
 
         {/* Overview Cards */}
@@ -166,35 +222,48 @@ export function AnalyticsPageClient() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Completion Rate
+              </CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{overallCompletionRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold">
+                {overallCompletionRate.toFixed(1)}%
+              </div>
               <Progress value={overallCompletionRate} className="mt-2" />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Engineers</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Active Engineers
+              </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{engineerStats.length}</div>
-              <p className="text-xs text-muted-foreground">Currently working on projects</p>
+              <p className="text-xs text-muted-foreground">
+                Currently working on projects
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Sprints</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Active Sprints
+              </CardTitle>
               <Calendar className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{sprints.filter((s) => s.status === "Active").length}</div>
+              <div className="text-2xl font-bold">
+                {sprints.filter((s) => s.sprintStatus === "Active").length}
+              </div>
               <p className="text-xs text-muted-foreground">
-                {sprints.filter((s) => s.status === "Completed").length} completed
+                {sprints.filter((s) => s.sprintStatus === "Completed").length}{" "}
+                completed
               </p>
             </CardContent>
           </Card>
@@ -222,8 +291,16 @@ export function AnalyticsPageClient() {
                       <XAxis dataKey="name" />
                       <YAxis />
                       <Tooltip />
-                      <Bar dataKey="totalTasks" fill="#8884d8" name="Total Tasks" />
-                      <Bar dataKey="completedTasks" fill="#82ca9d" name="Completed" />
+                      <Bar
+                        dataKey="totalTasks"
+                        fill="#8884d8"
+                        name="Total Tasks"
+                      />
+                      <Bar
+                        dataKey="completedTasks"
+                        fill="#82ca9d"
+                        name="Completed"
+                      />
                     </BarChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -232,35 +309,59 @@ export function AnalyticsPageClient() {
               <Card>
                 <CardHeader>
                   <CardTitle>Engineer Performance Table</CardTitle>
-                  <CardDescription>Detailed performance metrics</CardDescription>
+                  <CardDescription>
+                    Detailed performance metrics
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {engineerStats.map((engineer) => (
-                      <div key={engineer.name} className="border rounded-lg p-4">
+                      <div
+                        key={engineer.name}
+                        className="border rounded-lg p-4"
+                      >
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-semibold">{engineer.name}</h4>
-                          <Badge variant="outline">{engineer.completionRate.toFixed(1)}% completion</Badge>
+                          <Badge variant="outline">
+                            {engineer.completionRate.toFixed(1)}% completion
+                          </Badge>
                         </div>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
-                            <span className="text-muted-foreground">Total Tasks:</span>
-                            <span className="ml-2 font-medium">{engineer.totalTasks}</span>
+                            <span className="text-muted-foreground">
+                              Total Tasks:
+                            </span>
+                            <span className="ml-2 font-medium">
+                              {engineer.totalTasks}
+                            </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Completed:</span>
-                            <span className="ml-2 font-medium text-green-600">{engineer.completedTasks}</span>
+                            <span className="text-muted-foreground">
+                              Completed:
+                            </span>
+                            <span className="ml-2 font-medium text-green-600">
+                              {engineer.completedTasks}
+                            </span>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">In Progress:</span>
-                            <span className="ml-2 font-medium text-blue-600">{engineer.inProgressTasks}</span>
+                            <span className="text-muted-foreground">
+                              In Progress:
+                            </span>
+                            <span className="ml-2 font-medium text-blue-600">
+                              {engineer.inProgressTasks}
+                            </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Todo:</span>
-                            <span className="ml-2 font-medium text-gray-600">{engineer.todoTasks}</span>
+                            <span className="ml-2 font-medium text-gray-600">
+                              {engineer.todoTasks}
+                            </span>
                           </div>
                         </div>
-                        <Progress value={engineer.completionRate} className="mt-3" />
+                        <Progress
+                          value={engineer.completionRate}
+                          className="mt-3"
+                        />
                       </div>
                     ))}
                   </div>
@@ -273,7 +374,9 @@ export function AnalyticsPageClient() {
             <Card>
               <CardHeader>
                 <CardTitle>Sprint Performance Overview</CardTitle>
-                <CardDescription>Completion rates and task distribution across sprints</CardDescription>
+                <CardDescription>
+                  Completion rates and task distribution across sprints
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
@@ -282,8 +385,16 @@ export function AnalyticsPageClient() {
                     <XAxis dataKey="sprintName" />
                     <YAxis />
                     <Tooltip />
-                    <Bar dataKey="totalTasks" fill="#8884d8" name="Total Tasks" />
-                    <Bar dataKey="completedTasks" fill="#82ca9d" name="Completed Tasks" />
+                    <Bar
+                      dataKey="totalTasks"
+                      fill="#8884d8"
+                      name="Total Tasks"
+                    />
+                    <Bar
+                      dataKey="completedTasks"
+                      fill="#82ca9d"
+                      name="Completed Tasks"
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -293,14 +404,22 @@ export function AnalyticsPageClient() {
               {sprintPerformance.map((sprint) => (
                 <Card key={sprint.sprintName}>
                   <CardHeader>
-                    <CardTitle className="text-lg">{sprint.sprintName}</CardTitle>
-                    <CardDescription>{sprint.duration} days duration</CardDescription>
+                    <CardTitle className="text-lg">
+                      {sprint.sprintName}
+                    </CardTitle>
+                    <CardDescription>
+                      {sprint.duration} days duration
+                    </CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
                       <div className="flex justify-between">
-                        <span className="text-sm text-muted-foreground">Completion Rate</span>
-                        <span className="font-semibold">{sprint.completionRate.toFixed(1)}%</span>
+                        <span className="text-sm text-muted-foreground">
+                          Completion Rate
+                        </span>
+                        <span className="font-semibold">
+                          {sprint.completionRate.toFixed(1)}%
+                        </span>
                       </div>
                       <Progress value={sprint.completionRate} />
                       <div className="flex justify-between text-sm">
@@ -319,7 +438,9 @@ export function AnalyticsPageClient() {
               <Card>
                 <CardHeader>
                   <CardTitle>Priority Distribution</CardTitle>
-                  <CardDescription>Task distribution by priority level</CardDescription>
+                  <CardDescription>
+                    Task distribution by priority level
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -329,13 +450,18 @@ export function AnalyticsPageClient() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percentage }) => `${name}: ${percentage}%`}
+                        label={({ name, percentage }) =>
+                          `${name}: ${percentage}%`
+                        }
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
                       >
                         {priorityDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -347,7 +473,9 @@ export function AnalyticsPageClient() {
               <Card>
                 <CardHeader>
                   <CardTitle>Status Distribution</CardTitle>
-                  <CardDescription>Current task status breakdown</CardDescription>
+                  <CardDescription>
+                    Current task status breakdown
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={300}>
@@ -357,13 +485,18 @@ export function AnalyticsPageClient() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percentage }) => `${name}: ${percentage}%`}
+                        label={({ name, percentage }) =>
+                          `${name}: ${percentage}%`
+                        }
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
                       >
                         {statusDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
                         ))}
                       </Pie>
                       <Tooltip />
@@ -378,7 +511,9 @@ export function AnalyticsPageClient() {
             <Card>
               <CardHeader>
                 <CardTitle>Performance Trends</CardTitle>
-                <CardDescription>Sprint completion rates over time</CardDescription>
+                <CardDescription>
+                  Sprint completion rates over time
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={400}>
@@ -406,31 +541,48 @@ export function AnalyticsPageClient() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Average Completion Rate</span>
+                    <span className="text-sm font-medium">
+                      Average Completion Rate
+                    </span>
                     <Badge variant="secondary">
-                      {(
-                        sprintPerformance.reduce((acc, sprint) => acc + sprint.completionRate, 0) /
-                        sprintPerformance.length
-                      ).toFixed(1)}
+                      {sprintPerformance.length > 0
+                        ? (
+                            sprintPerformance.reduce(
+                              (acc, sprint) => acc + sprint.completionRate,
+                              0
+                            ) / sprintPerformance.length
+                          ).toFixed(1)
+                        : "0.0"}
                       %
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Average Tasks per Sprint</span>
+                    <span className="text-sm font-medium">
+                      Average Tasks per Sprint
+                    </span>
                     <Badge variant="secondary">
-                      {(
-                        sprintPerformance.reduce((acc, sprint) => acc + sprint.totalTasks, 0) / sprintPerformance.length
-                      ).toFixed(1)}
+                      {sprintPerformance.length > 0
+                        ? (
+                            sprintPerformance.reduce(
+                              (acc, sprint) => acc + sprint.totalTasks,
+                              0
+                            ) / sprintPerformance.length
+                          ).toFixed(1)
+                        : "0.0"}
                     </Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Most Productive Engineer</span>
+                    <span className="text-sm font-medium">
+                      Most Productive Engineer
+                    </span>
                     <Badge variant="secondary">
-                      {
-                        engineerStats.reduce((prev, current) =>
-                          prev.completedTasks > current.completedTasks ? prev : current,
-                        ).name
-                      }
+                      {engineerStats.length > 0
+                        ? engineerStats.reduce((prev, current) =>
+                            prev.completedTasks > current.completedTasks
+                              ? prev
+                              : current
+                          ).name
+                        : "N/A"}
                     </Badge>
                   </div>
                 </CardContent>
@@ -445,21 +597,27 @@ export function AnalyticsPageClient() {
                     <AlertCircle className="h-4 w-4 text-yellow-500 mt-0.5" />
                     <div className="text-sm">
                       <p className="font-medium">Workload Balance</p>
-                      <p className="text-muted-foreground">Consider redistributing tasks for better balance</p>
+                      <p className="text-muted-foreground">
+                        Consider redistributing tasks for better balance
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-2">
                     <TrendingUp className="h-4 w-4 text-green-500 mt-0.5" />
                     <div className="text-sm">
                       <p className="font-medium">Sprint Planning</p>
-                      <p className="text-muted-foreground">Current sprint completion rate is healthy</p>
+                      <p className="text-muted-foreground">
+                        Current sprint completion rate is healthy
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-start space-x-2">
                     <Clock className="h-4 w-4 text-blue-500 mt-0.5" />
                     <div className="text-sm">
                       <p className="font-medium">Time Management</p>
-                      <p className="text-muted-foreground">Focus on reducing tasks in review stage</p>
+                      <p className="text-muted-foreground">
+                        Focus on reducing tasks in review stage
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -469,5 +627,5 @@ export function AnalyticsPageClient() {
         </Tabs>
       </div>
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -19,10 +19,16 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import Image from "next/image";
 
 export function LandingPageClient() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
@@ -31,7 +37,8 @@ export function LandingPageClient() {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  // Show loading spinner until component is mounted and auth check is complete
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -50,10 +57,13 @@ export function LandingPageClient() {
       <header className="border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <img
+            <Image
               src="/flowcraft-logo.png"
               alt="FlowCraft Logo"
               className="w-8 h-8 rounded-md"
+              width={32}
+              height={32}
+              preload
             />
             <h1 className="text-xl font-semibold">FlowCraft</h1>
           </div>
@@ -186,10 +196,13 @@ export function LandingPageClient() {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <img
+              <Image
                 src="/flowcraft-logo.png"
                 alt="FlowCraft Logo"
                 className="w-6 h-6 rounded-md"
+                loading="lazy"
+                width={24}
+                height={24}
               />
               <span className="text-sm text-muted-foreground">
                 © 2025 FlowCraft. All rights reserved.

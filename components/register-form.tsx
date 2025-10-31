@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { register as registerUser } from "@/lib/auth";
+import { useAuth } from "@/contexts/auth-context";
 import { AppwriteException } from "appwrite";
 
 const registerSchema = z
@@ -36,8 +36,16 @@ export function RegisterForm({
   redirectTo = "/dashboard/issues",
 }: RegisterFormProps) {
   const router = useRouter();
+  const { register: registerUser, user, loading } = useAuth();
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!loading && user) {
+      router.push(redirectTo);
+    }
+  }, [user, loading, router, redirectTo]);
 
   const {
     register,
@@ -52,25 +60,33 @@ export function RegisterForm({
     setError("");
 
     try {
-      await registerUser({
-        name: data.name,
-        email: data.email,
-        password: data.password,
-      });
+      console.log("Starting registration for:", data.email);
+      await registerUser(data.email, data.password, data.name);
+      console.log("Registration successful");
 
       if (onSuccess) {
         onSuccess();
       }
 
-      router.push(redirectTo);
-      router.refresh();
+      // Wait a bit for the auth context to update, then redirect
+      setTimeout(() => {
+        router.push(redirectTo);
+        router.refresh();
+      }, 100);
     } catch (err) {
+      console.error("Registration error:", err);
       if (err instanceof AppwriteException) {
-        setError(err.message || "Failed to create account. Please try again.");
+        // Handle specific error codes
+        if (err.code === 409) {
+          setError("An account with this email already exists.");
+        } else {
+          setError(
+            err.message || "Failed to create account. Please try again."
+          );
+        }
       } else {
         setError("An unexpected error occurred. Please try again.");
       }
-    } finally {
       setIsLoading(false);
     }
   };

@@ -1,46 +1,61 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { MoreHorizontal, Edit, Play, Square, Calendar } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { SprintForm } from "./sprint-form"
-import type { Sprint, Issue } from "@/types"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, Edit, Play, Square, Calendar } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { SprintForm } from "./sprint-form";
+import type { Sprint, Issue } from "@/types";
 
 interface SprintCardProps {
-  sprint: Sprint
-  issues: Issue[]
-  onEdit: (sprint: Sprint) => void
-  onStart: (sprintId: string) => void
-  onEnd: (sprintId: string) => void
-  canStart: boolean
+  sprint: Sprint;
+  issues: Issue[];
+  onEdit: (sprintData: Partial<Sprint>) => void;
+  onStart: (sprintId: string) => void;
+  onEnd: (sprintId: string) => void;
+  canStart: boolean;
 }
 
-export function SprintCard({ sprint, issues, onEdit, onStart, onEnd, canStart }: SprintCardProps) {
-  const sprintIssues = issues.filter((issue) => issue.sprintId === sprint.id)
-  const completedIssues = sprintIssues.filter((issue) => issue.status === "Done")
+export function SprintCard({
+  sprint,
+  issues,
+  onEdit,
+  onStart,
+  onEnd,
+  canStart,
+}: SprintCardProps) {
+  const sprintIssues = issues.filter((issue) => issue.sprintId === sprint.$id);
+  const completedIssues = sprintIssues.filter(
+    (issue) => issue.status === "Done"
+  );
 
   const getStatusColor = () => {
-    switch (sprint.status) {
+    switch (sprint.sprintStatus) {
       case "Active":
-        return "bg-green-100 text-green-800 border-green-200"
+        return "bg-green-100 text-green-800 border-green-200";
       case "Completed":
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
       case "Planned":
-        return "bg-blue-100 text-blue-800 border-blue-200"
+        return "bg-blue-100 text-blue-800 border-blue-200";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200"
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
-  }
+  };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
-    })
-  }
+    });
+  };
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -48,9 +63,9 @@ export function SprintCard({ sprint, issues, onEdit, onStart, onEnd, canStart }:
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <h3 className="font-medium">{sprint.name}</h3>
+              <h3 className="font-medium">{sprint.sprintTitle}</h3>
               <Badge className={getStatusColor()} variant="outline">
-                {sprint.status}
+                {sprint.sprintStatus}
               </Badge>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -77,14 +92,17 @@ export function SprintCard({ sprint, issues, onEdit, onStart, onEnd, canStart }:
                   </DropdownMenuItem>
                 }
               />
-              {sprint.status === "Planned" && (
-                <DropdownMenuItem onClick={() => onStart(sprint.id)} disabled={!canStart}>
+              {sprint.sprintStatus === "Planned" && (
+                <DropdownMenuItem
+                  onClick={() => onStart(sprint.$id || "")}
+                  disabled={!canStart}
+                >
                   <Play className="h-4 w-4 mr-2" />
                   Start Sprint
                 </DropdownMenuItem>
               )}
-              {sprint.status === "Active" && (
-                <DropdownMenuItem onClick={() => onEnd(sprint.id)}>
+              {sprint.sprintStatus === "Active" && (
+                <DropdownMenuItem onClick={() => onEnd(sprint.$id || "")}>
                   <Square className="h-4 w-4 mr-2" />
                   End Sprint
                 </DropdownMenuItem>
@@ -106,16 +124,20 @@ export function SprintCard({ sprint, issues, onEdit, onStart, onEnd, canStart }:
               <div
                 className="bg-green-500 h-2 rounded-full transition-all duration-300"
                 style={{
-                  width: `${(completedIssues.length / sprintIssues.length) * 100}%`,
+                  width: `${
+                    (completedIssues.length / sprintIssues.length) * 100
+                  }%`,
                 }}
               />
             </div>
           )}
           <div className="text-xs text-muted-foreground">
-            {sprintIssues.length === 0 ? "No issues assigned" : `${sprintIssues.length} issues in this sprint`}
+            {sprintIssues.length === 0
+              ? "No issues assigned"
+              : `${sprintIssues.length} issues in this sprint`}
           </div>
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

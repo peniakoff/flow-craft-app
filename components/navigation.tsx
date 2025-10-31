@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { List, Kanban, Calendar, BarChart3, LogOut } from "lucide-react";
+import { List, Kanban, Calendar, BarChart3, LogOut, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import ThemeToggle from "@/components/theme-toggle";
 import { useApp } from "@/contexts/app-context";
 import { useAuth } from "@/contexts/auth-context";
+import { useTeams } from "@/contexts/teams-context";
 import type { ViewType } from "@/types";
+import Image from "next/image";
 
 interface NavigationProps {
   currentView: ViewType;
@@ -20,6 +22,7 @@ export function Navigation({ currentView }: NavigationProps) {
   const router = useRouter();
   const { issues, sprints, activeSprint } = useApp();
   const { logout, user } = useAuth();
+  const { teamsCount } = useTeams();
 
   const handleLogout = async () => {
     try {
@@ -32,7 +35,7 @@ export function Navigation({ currentView }: NavigationProps) {
   };
 
   const activeSprintIssues = issues.filter(
-    (issue) => issue.sprintId === activeSprint?.id
+    (issue) => issue.sprintId === activeSprint?.$id
   );
 
   const navItems = [
@@ -59,6 +62,13 @@ export function Navigation({ currentView }: NavigationProps) {
       href: "/dashboard/sprints",
     },
     {
+      id: "teams" as ViewType,
+      label: "Teams",
+      icon: Users,
+      count: teamsCount,
+      href: "/dashboard/teams",
+    },
+    {
       id: "analytics" as const,
       label: "Analytics",
       icon: BarChart3,
@@ -76,10 +86,13 @@ export function Navigation({ currentView }: NavigationProps) {
               href="/dashboard/issues"
               className="flex items-center space-x-2"
             >
-              <img
+              <Image
                 src="/flowcraft-logo.png"
                 alt="FlowCraft Logo"
                 className="w-8 h-8 rounded-md"
+                priority
+                width={32}
+                height={32}
               />
               <h1 className="text-xl font-semibold">FlowCraft</h1>
             </Link>
@@ -104,13 +117,13 @@ export function Navigation({ currentView }: NavigationProps) {
                     asChild={!isDisabled}
                   >
                     {isDisabled ? (
-                      <div>
+                      <>
                         <Icon className="h-4 w-4" />
                         <span>{item.label}</span>
                         <Badge variant="outline" className="ml-1 text-xs">
                           {item.count}
                         </Badge>
-                      </div>
+                      </>
                     ) : (
                       <Link href={item.href}>
                         <Icon className="h-4 w-4" />
@@ -133,21 +146,26 @@ export function Navigation({ currentView }: NavigationProps) {
               </div>
             )}
             {user && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground hidden md:block">
-                  {user.name || user.email}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="flex items-center gap-2"
-                >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden md:inline">Log Out</span>
-                </Button>
-              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="flex items-center gap-2 border border-border"
+              >
+                <Link href="/dashboard/user">
+                  <span className="text-sm">{user.name || user.email}</span>
+                </Link>
+              </Button>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="flex items-center gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden md:inline">Log Out</span>
+            </Button>
             <ThemeToggle />
           </div>
         </div>

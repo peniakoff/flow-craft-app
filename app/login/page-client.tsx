@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -12,12 +12,18 @@ import {
 } from "@/components/ui/card";
 import { LoginForm } from "@/components/login-form";
 import { useAuth } from "@/contexts/auth-context";
+import Image from "next/image";
 
 export function LoginPageClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const redirectTo = searchParams.get("redirect") || "/dashboard/issues";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
@@ -26,7 +32,8 @@ export function LoginPageClient() {
     }
   }, [user, loading, router, redirectTo]);
 
-  if (loading) {
+  // Show loading spinner until component is mounted and auth check is complete
+  if (!mounted || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -44,10 +51,13 @@ export function LoginPageClient() {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <Link href="/" className="inline-flex items-center space-x-2 mb-6">
-            <img
+            <Image
               src="/flowcraft-logo.png"
               alt="FlowCraft Logo"
               className="w-10 h-10 rounded-md"
+              width={32}
+              height={32}
+              preload
             />
             <h1 className="text-2xl font-semibold">FlowCraft</h1>
           </Link>

@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { SprintCard } from "./sprint-card"
-import { SprintForm } from "./sprint-form"
-import { Plus } from "lucide-react"
-import type { Sprint, Issue } from "@/types"
+import { Button } from "@/components/ui/button";
+import { SprintCard } from "./sprint-card";
+import { SprintForm } from "./sprint-form";
+import { Plus } from "lucide-react";
+import type { Sprint, Issue } from "@/types";
 
 interface SprintsViewProps {
-  sprints: Sprint[]
-  issues: Issue[]
-  onCreateSprint: (sprintData: Partial<Sprint>) => void
-  onEditSprint: (sprint: Sprint) => void
-  onStartSprint: (sprintId: string) => void
-  onEndSprint: (sprintId: string) => void
+  sprints: Sprint[];
+  issues: Issue[];
+  onCreateSprint: (sprintData: Partial<Sprint>) => void;
+  onEditSprint: (sprintData: Partial<Sprint>) => void;
+  onStartSprint: (sprintId: string) => void;
+  onEndSprint: (sprintId: string) => void;
 }
 
 export function SprintsView({
@@ -23,13 +23,19 @@ export function SprintsView({
   onStartSprint,
   onEndSprint,
 }: SprintsViewProps) {
-  const hasActiveSprint = sprints.some((sprint) => sprint.status === "Active")
+  const hasActiveSprint = sprints.some(
+    (sprint) => sprint.sprintStatus === "Active"
+  );
 
   // Sort sprints: Active first, then Planned, then Completed
   const sortedSprints = [...sprints].sort((a, b) => {
-    const statusOrder = { Active: 0, Planned: 1, Completed: 2 }
-    return statusOrder[a.status] - statusOrder[b.status]
-  })
+    const statusOrder: Record<string, number> = {
+      Active: 0,
+      Planned: 1,
+      Completed: 2,
+    };
+    return statusOrder[a.sprintStatus] - statusOrder[b.sprintStatus];
+  });
 
   return (
     <div className="space-y-6">
@@ -49,8 +55,8 @@ export function SprintsView({
       {hasActiveSprint && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            <strong>Note:</strong> Only one sprint can be active at a time. End the current active sprint before
-            starting a new one.
+            <strong>Note:</strong> Only one sprint can be active at a time. End
+            the current active sprint before starting a new one.
           </p>
         </div>
       )}
@@ -58,7 +64,7 @@ export function SprintsView({
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {sortedSprints.map((sprint) => (
           <SprintCard
-            key={sprint.id}
+            key={sprint.$id}
             sprint={sprint}
             issues={issues}
             onEdit={onEditSprint}
@@ -71,9 +77,11 @@ export function SprintsView({
 
       {sprints.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-muted-foreground">No sprints created yet. Create your first sprint to get started.</p>
+          <p className="text-muted-foreground">
+            No sprints created yet. Create your first sprint to get started.
+          </p>
         </div>
       )}
     </div>
-  )
+  );
 }

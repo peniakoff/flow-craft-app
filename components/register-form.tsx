@@ -68,11 +68,9 @@ export function RegisterForm({
         onSuccess();
       }
 
-      // Wait a bit for the auth context to update, then redirect
-      setTimeout(() => {
-        router.push(redirectTo);
-        router.refresh();
-      }, 100);
+      // Redirect immediately - the auth context has already been updated
+      router.push(redirectTo);
+      router.refresh();
     } catch (err) {
       console.error("Registration error:", err);
       if (err instanceof AppwriteException) {

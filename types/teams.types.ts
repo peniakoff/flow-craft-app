@@ -21,9 +21,6 @@ export type TeamList = Models.TeamList;
 export type MembershipList = Models.MembershipList;
 
 /**
- * Team Member - extracted member info for display
- * Based on Appwrite Membership model
+ * Team Member - alias for Membership for semantic clarity in team contexts
  */
-export interface TeamMember extends Models.Membership {
-  // Inherits all Membership properties
-}
+export type TeamMember = Models.Membership;

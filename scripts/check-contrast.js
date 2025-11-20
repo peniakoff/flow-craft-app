@@ -4,7 +4,19 @@
   Usage: node scripts/check-contrast.js
 */
 
-const tokens = require('../tokens/design-tokens.json');
+const fs = require('fs');
+const path = require('path');
+
+let tokens;
+try {
+  const tokensPath = path.resolve(__dirname, '../tokens/design-tokens.json');
+  const data = fs.readFileSync(tokensPath, 'utf8');
+  tokens = JSON.parse(data);
+} catch (err) {
+  console.error('Error loading design-tokens.json:', err.message);
+  console.error('Please ensure the file exists at: tokens/design-tokens.json');
+  process.exit(1);
+}
 
 function hexToRgb(hex) {
   const h = hex.replace('#', '');

@@ -34,14 +34,14 @@ interface AppContextType {
   loadSprints: (teamId: string) => Promise<void>;
   loadTeamData: (teamId: string) => Promise<void>;
   handleCreateIssue: (issueData: Partial<Issue>) => Promise<void>;
-  handleEditIssue: (issue: Issue) => Promise<void>;
+  handleEditIssue: (issueData: Partial<Issue>) => Promise<void>;
   handleDeleteIssue: (issueId: string) => Promise<void>;
   handleAssignToSprint: (
     issueId: string,
     sprintId: string | undefined
   ) => Promise<void>;
   handleCreateSprint: (sprintData: Partial<Sprint>) => Promise<void>;
-  handleEditSprint: (sprint: Sprint) => Promise<void>;
+  handleEditSprint: (sprintData: Partial<Sprint>) => Promise<void>;
   handleStartSprint: (sprintId: string) => Promise<void>;
   handleEndSprint: (sprintId: string) => Promise<void>;
 }
@@ -191,13 +191,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
    * Edit an existing issue
    */
   const handleEditIssue = useCallback(
-    async (issue: Issue) => {
-      if (!issue.$id) {
+    async (issueData: Partial<Issue>) => {
+      if (!issueData.$id) {
         throw new Error("Issue ID is required");
       }
 
-      const updatedIssue = await updateIssueAPI(issue.$id, issue);
-      setIssues(issues.map((i) => (i.$id === issue.$id ? updatedIssue : i)));
+      const updatedIssue = await updateIssueAPI(
+        issueData.$id,
+        issueData as Issue
+      );
+      setIssues(
+        issues.map((i) => (i.$id === issueData.$id ? updatedIssue : i))
+      );
     },
     [issues]
   );
@@ -262,14 +267,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
    * Edit an existing sprint
    */
   const handleEditSprint = useCallback(
-    async (sprint: Sprint) => {
-      if (!sprint.$id) {
+    async (sprintData: Partial<Sprint>) => {
+      if (!sprintData.$id) {
         throw new Error("Sprint ID is required");
       }
 
-      const updatedSprint = await updateSprintAPI(sprint.$id, sprint);
+      const updatedSprint = await updateSprintAPI(
+        sprintData.$id,
+        sprintData as Sprint
+      );
       setSprints(
-        sprints.map((s) => (s.$id === sprint.$id ? updatedSprint : s))
+        sprints.map((s) => (s.$id === sprintData.$id ? updatedSprint : s))
       );
     },
     [sprints]

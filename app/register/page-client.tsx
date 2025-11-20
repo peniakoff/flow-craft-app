@@ -55,6 +55,8 @@ export function RegisterPageClient() {
               src="/flowcraft-logo.png"
               alt="FlowCraft Logo"
               className="w-10 h-10 rounded-md"
+              width={40}
+              height={40}
             />
             <h1 className="text-2xl font-semibold">FlowCraft</h1>
           </Link>

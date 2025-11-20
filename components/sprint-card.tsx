@@ -38,13 +38,13 @@ export function SprintCard({
   const getStatusColor = () => {
     switch (sprint.sprintStatus) {
       case "Active":
-        return "bg-green-100 text-green-800 border-green-200";
+        return "bg-accent/30 text-accent-foreground border-accent";
       case "Completed":
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-muted text-muted-foreground border-muted";
       case "Planned":
-        return "bg-blue-100 text-blue-800 border-blue-200";
+        return "bg-primary/10 text-primary border-primary/20";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
+        return "bg-muted text-muted-foreground border-muted";
     }
   };
 
@@ -120,9 +120,9 @@ export function SprintCard({
             </span>
           </div>
           {sprintIssues.length > 0 && (
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-muted rounded-full h-2">
               <div
-                className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                className="bg-primary h-2 rounded-full transition-all duration-300"
                 style={{
                   width: `${
                     (completedIssues.length / sprintIssues.length) * 100

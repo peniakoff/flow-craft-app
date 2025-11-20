@@ -17,12 +17,12 @@ export interface LoginData {
  */
 export async function register(data: RegisterData): Promise<Models.User<Models.Preferences>> {
   try {
-    const user = await account.create({
-      userId: ID.unique(),
-      email: data.email,
-      password: data.password,
-      name: data.name
-    });
+    const user = await account.create(
+      ID.unique(),
+      data.email,
+      data.password,
+      data.name
+    );
     
     // Automatically log in after registration
     await login({ email: data.email, password: data.password });
@@ -44,18 +44,16 @@ export async function login(data: LoginData): Promise<Models.Session> {
       const existingUser = await account.get();
       if (existingUser) {
         // Delete current session before creating a new one
-        await account.deleteSession({
-          sessionId: 'current'
-        });
+        await account.deleteSession('current');
       }
     } catch (error) {
       // No existing session, continue with login
     }
 
-    const session = await account.createEmailPasswordSession({
-      email: data.email,
-      password: data.password
-    });
+    const session = await account.createEmailPasswordSession(
+      data.email,
+      data.password
+    );
     return session;
   } catch (error) {
     console.error('Login error:', error);
@@ -68,9 +66,7 @@ export async function login(data: LoginData): Promise<Models.Session> {
  */
 export async function logout(): Promise<void> {
   try {
-    await account.deleteSession({
-      sessionId: 'current'
-    });
+    await account.deleteSession('current');
   } catch (error) {
     console.error('Logout error:', error);
     throw error;
@@ -122,9 +118,7 @@ export async function logoutAllSessions(): Promise<void> {
  */
 export async function updateName(name: string): Promise<Models.User<Models.Preferences>> {
   try {
-    const user = await account.updateName({
-      name: name
-    });
+    const user = await account.updateName(name);
     return user;
   } catch (error) {
     console.error('Update name error:', error);
@@ -137,10 +131,10 @@ export async function updateName(name: string): Promise<Models.User<Models.Prefe
  */
 export async function updatePassword(newPassword: string, oldPassword: string): Promise<Models.User<Models.Preferences>> {
   try {
-    const user = await account.updatePassword({
-      password: newPassword,
-      oldPassword: oldPassword
-    });
+    const user = await account.updatePassword(
+      newPassword,
+      oldPassword
+    );
     return user;
   } catch (error) {
     console.error('Update password error:', error);

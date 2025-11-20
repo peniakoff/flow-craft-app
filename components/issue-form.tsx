@@ -130,10 +130,10 @@ export function IssueForm({
                 setFormData({ ...formData, title: e.target.value })
               }
               placeholder="Enter issue title"
-              className={errors.title ? "border-red-500" : ""}
+              className={errors.title ? "border-destructive" : ""}
             />
             {errors.title && (
-              <p className="text-sm text-red-500">{errors.title}</p>
+              <p className="text-sm text-destructive">{errors.title}</p>
             )}
           </div>
 

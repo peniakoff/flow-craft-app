@@ -2,12 +2,8 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
-import "@/public/css/globals.css";
-import {
-  Archivo as V0_Font_Archivo,
-  Geist_Mono as V0_Font_Geist_Mono,
-  PT_Serif as V0_Font_PT_Serif,
-} from "next/font/google";
+import "@/styles/globals.css";
+import { Geist_Mono as V0_Font_Geist_Mono } from "next/font/google";
 import { Roboto as V0_Font_Roboto } from "next/font/google";
 import { AppProvider } from "@/contexts/app-context";
 import { AuthProvider } from "@/contexts/auth-context";

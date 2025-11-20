@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Navigation } from "@/components/navigation";
 import { TeamsView } from "@/components/teams-view";
 import { useAuth } from "@/contexts/auth-context";
 import { useTeams } from "@/contexts/teams-context";
@@ -204,13 +203,8 @@ export function TeamsPageClient() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Navigation currentView="teams" />
-        <main className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </main>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -224,20 +218,15 @@ export function TeamsPageClient() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navigation currentView="teams" />
-      <main className="container mx-auto px-4 py-8">
-        <TeamsView
-          teams={teams}
-          teamMemberships={teamMemberships}
-          selectedTeamId={selectedTeamId}
-          onCreateTeam={handleCreateTeam}
-          onDeleteTeam={handleDeleteTeam}
-          onInviteUser={handleInviteUser}
-          onRemoveMember={handleRemoveMember}
-          onSelectTeam={handleSelectTeam}
-        />
-      </main>
-    </div>
+    <TeamsView
+      teams={teams}
+      teamMemberships={teamMemberships}
+      selectedTeamId={selectedTeamId}
+      onCreateTeam={handleCreateTeam}
+      onDeleteTeam={handleDeleteTeam}
+      onInviteUser={handleInviteUser}
+      onRemoveMember={handleRemoveMember}
+      onSelectTeam={handleSelectTeam}
+    />
   );
 }

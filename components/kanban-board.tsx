@@ -19,18 +19,18 @@ interface KanbanBoardProps {
 }
 
 const columns: { id: IssueStatus; title: string; color: string }[] = [
-  { id: "Todo", title: "Todo", color: "bg-gray-50 border-gray-200" },
+  { id: "Todo", title: "Todo", color: "bg-muted border-muted" },
   {
     id: "In Progress",
     title: "In Progress",
-    color: "bg-blue-50 border-blue-200",
+    color: "bg-primary/5 border-primary/20",
   },
   {
     id: "In Review",
     title: "In Review",
-    color: "bg-yellow-50 border-yellow-200",
+    color: "bg-secondary/50 border-secondary",
   },
-  { id: "Done", title: "Done", color: "bg-green-50 border-green-200" },
+  { id: "Done", title: "Done", color: "bg-accent/30 border-accent" },
 ];
 
 export function KanbanBoard({
@@ -75,12 +75,7 @@ export function KanbanBoard({
           <h2 className="text-xl font-semibold">Kanban Board</h2>
           <p className="text-sm text-muted-foreground">{sprint.sprintTitle}</p>
         </div>
-        <Badge
-          className="bg-green-100 text-green-800 border-green-200"
-          variant="outline"
-        >
-          {sprintIssues.length} issues
-        </Badge>
+        <Badge variant="outline">{sprintIssues.length} issues</Badge>
       </div>
 
       <DragDropContext onDragEnd={handleDragEnd}>
@@ -109,7 +104,7 @@ export function KanbanBoard({
                       } ${
                         snapshot.isDraggingOver
                           ? "border-primary bg-primary/5"
-                          : "border-gray-200"
+                          : "border-muted"
                       }`}
                     >
                       <div className="space-y-3">

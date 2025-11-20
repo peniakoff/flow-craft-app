@@ -3,6 +3,9 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
+import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function DashboardLayout({
   children,
@@ -11,6 +14,7 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!loading && !user) {
@@ -30,5 +34,14 @@ export default function DashboardLayout({
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <SidebarProvider defaultOpen={!isMobile}>
+      <AppSidebar />
+      <SidebarInset>
+        <main className="flex-1 overflow-auto">
+          <div className="container mx-auto px-4 py-8">{children}</div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
 }

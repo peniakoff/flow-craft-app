@@ -104,10 +104,10 @@ export function SprintForm({ sprint, onSubmit, trigger }: SprintFormProps) {
                 setFormData({ ...formData, sprintTitle: e.target.value })
               }
               placeholder="Enter sprint name"
-              className={errors.sprintTitle ? "border-red-500" : ""}
+              className={errors.sprintTitle ? "border-destructive" : ""}
             />
             {errors.sprintTitle && (
-              <p className="text-sm text-red-500">{errors.sprintTitle}</p>
+              <p className="text-sm text-destructive">{errors.sprintTitle}</p>
             )}
           </div>
 
@@ -120,10 +120,10 @@ export function SprintForm({ sprint, onSubmit, trigger }: SprintFormProps) {
               onChange={(e) =>
                 setFormData({ ...formData, startDate: e.target.value })
               }
-              className={errors.startDate ? "border-red-500" : ""}
+              className={errors.startDate ? "border-destructive" : ""}
             />
             {errors.startDate && (
-              <p className="text-sm text-red-500">{errors.startDate}</p>
+              <p className="text-sm text-destructive">{errors.startDate}</p>
             )}
           </div>
 
@@ -136,10 +136,10 @@ export function SprintForm({ sprint, onSubmit, trigger }: SprintFormProps) {
               onChange={(e) =>
                 setFormData({ ...formData, endDate: e.target.value })
               }
-              className={errors.endDate ? "border-red-500" : ""}
+              className={errors.endDate ? "border-destructive" : ""}
             />
             {errors.endDate && (
-              <p className="text-sm text-red-500">{errors.endDate}</p>
+              <p className="text-sm text-destructive">{errors.endDate}</p>
             )}
           </div>
 

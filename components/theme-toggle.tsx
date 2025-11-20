@@ -12,7 +12,7 @@ export default function ThemeToggle({
   inline = true,
   showSystemState = false,
 }: ThemeToggleProps) {
-  const { theme, setTheme, systemTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => setMounted(true), []);

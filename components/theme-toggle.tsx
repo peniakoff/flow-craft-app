@@ -5,13 +5,9 @@ import { useEffect, useState } from "react";
 
 interface ThemeToggleProps {
   inline?: boolean; // when true renders without any wrapping div styling
-  showSystemState?: boolean; // whether to show current system value in option label (opt-in)
 }
 
-export default function ThemeToggle({
-  inline = true,
-  showSystemState = false,
-}: ThemeToggleProps) {
+export default function ThemeToggle({ inline = true }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 

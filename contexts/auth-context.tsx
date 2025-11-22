@@ -109,12 +109,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(true);
     try {
       // Create new user account
-      const response = await account.create(
-        crypto.randomUUID(),
-        email,
-        password,
-        name
-      );
+      await account.create(crypto.randomUUID(), email, password, name);
 
       // Automatically log them in
       await account.createEmailPasswordSession(email, password);
@@ -128,36 +123,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updatePassword = async (oldPassword: string, newPassword: string) => {
-    try {
-      await account.updatePassword(newPassword, oldPassword);
-      // Re-fetch user data to ensure consistency
-      const response = await account.get();
-      setUser(response as User);
-    } catch (error) {
-      throw error;
-    }
+    await account.updatePassword(newPassword, oldPassword);
+    // Re-fetch user data to ensure consistency
+    const response = await account.get();
+    setUser(response as User);
   };
 
   const updateName = async (name: string) => {
-    try {
-      await account.updateName(name);
-      // Re-fetch user data
-      const response = await account.get();
-      setUser(response as User);
-    } catch (error) {
-      throw error;
-    }
+    await account.updateName(name);
+    // Re-fetch user data
+    const response = await account.get();
+    setUser(response as User);
   };
 
   const deleteAccount = async () => {
-    try {
-      // Note: This requires user to have entered their password recently
-      // You may need to implement re-authentication
-      await account.deleteIdentity("email");
-      setUser(null);
-    } catch (error) {
-      throw error;
-    }
+    // Note: This requires user to have entered their password recently
+    // You may need to implement re-authentication
+    await account.deleteIdentity("email");
+    setUser(null);
   };
 
   return (

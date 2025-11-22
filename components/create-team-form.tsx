@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -41,7 +41,7 @@ type FormData = z.infer<typeof formSchema>;
 
 interface CreateTeamFormProps {
   onSubmit: (data: FormData) => Promise<void>;
-  trigger: React.ReactNode;
+  trigger: ReactNode;
 }
 
 export function CreateTeamForm({ onSubmit, trigger }: CreateTeamFormProps) {

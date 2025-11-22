@@ -8,9 +8,13 @@ import { Client, Account, TablesDB, Teams, Databases } from 'appwrite';
 
 export const client = new Client();
 
+// Use environment variables with safe fallbacks for development
+const endpoint = process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT || 'http://localhost:80/v1';
+const projectId = process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID || 'default';
+
 client
-  .setEndpoint(process.env.NEXT_PUBLIC_APPWRITE_ENDPOINT!)
-  .setProject(process.env.NEXT_PUBLIC_APPWRITE_PROJECT_ID!);
+  .setEndpoint(endpoint)
+  .setProject(projectId);
 
 export const account = new Account(client);
 export const teams = new Teams(client);

@@ -21,7 +21,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import type { Issue, Priority, IssueStatus, Sprint } from "@/types";
+import type { Issue, IssueStatus, Sprint } from "@/types";
 import { useApp } from "@/contexts/app-context";
 import { teams } from "@/lib/appwrite";
 import type { Models } from "appwrite";

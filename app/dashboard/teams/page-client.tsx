@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TeamsView } from "@/components/teams-view";
 import { useAuth } from "@/contexts/auth-context";
@@ -42,19 +42,7 @@ export function TeamsPageClient() {
   }, [user, authLoading, router]);
 
   // Load teams on mount
-  useEffect(() => {
-    let isMounted = true;
-
-    if (user && isMounted) {
-      loadTeams();
-    }
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user]);
-
-  const loadTeams = async () => {
+  const loadTeams = useCallback(async () => {
     setLoading(true);
     try {
       const fetchedTeams = await getTeams();
@@ -93,7 +81,13 @@ export function TeamsPageClient() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getTeams, getMemberships, toast]);
+
+  useEffect(() => {
+    if (user) {
+      void loadTeams();
+    }
+  }, [user, loadTeams]);
 
   const handleCreateTeam = async (data: {
     name: string;

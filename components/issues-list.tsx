@@ -13,7 +13,7 @@ import {
 import { IssueCard } from "./issue-card";
 import { IssueForm } from "./issue-form";
 import { Search, Plus } from "lucide-react";
-import type { Issue, Sprint, Priority, IssueStatus } from "@/types";
+import type { Issue, Sprint, IssueStatus } from "@/types";
 
 interface IssuesListProps {
   issues: Issue[];

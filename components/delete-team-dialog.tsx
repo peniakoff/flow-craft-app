@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +18,7 @@ import { AppwriteException } from "appwrite";
 interface DeleteTeamDialogProps {
   teamName: string;
   onConfirm: () => Promise<void>;
-  trigger: React.ReactNode;
+  trigger: ReactNode;
 }
 
 export function DeleteTeamDialog({

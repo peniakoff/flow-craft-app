@@ -16,7 +16,6 @@ import {
   deleteIssue as deleteIssueAPI,
   createSprint as createSprintAPI,
   updateSprint as updateSprintAPI,
-  deleteSprint as deleteSprintAPI,
 } from "@/lib/data";
 import { useAuth } from "@/contexts/auth-context";
 

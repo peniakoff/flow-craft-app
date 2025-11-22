@@ -1,0 +1,53 @@
+/* Light theme tokens mapped from tokens.css (explicit light overrides if needed) */
+:root {
+  --fc-bg: var(--neutral-0);
+  --fc-fg: var(--neutral-900);
+  --fc-surface: var(--neutral-100);
+  --fc-muted: var(--neutral-700);
+  --fc-accent: var(--brand-500);
+  --fc-accent-fore: var(--neutral-0);
+  --fc-border: var(--neutral-300);
+}
+
+/* Icon stroke thickness */
+.icon { stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+.avatar { display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
+.avatar--sm { width: 28px; height: 28px; border-radius: var(--radius-sm); }
+.avatar--md { width: 36px; height: 36px; border-radius: var(--radius-md); }
+.avatar--lg { width: 48px; height: 48px; border-radius: var(--radius-lg); }
+.avatar__img { width: 100%; height: 100%; object-fit: cover; }
+
+/* accessibility helpers for status icons */
+.status { display: inline-flex; align-items: center; gap: 8px; }
+.status__label { font-size: 13px; line-height: 18px; }
+
+/* Primary CTA - flow variant: subtle animated gradient on hover */
+.btn--primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--fc-accent);
+  color: var(--fc-accent-fore);
+  padding: 8px 14px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+}
+.btn--primary:focus { outline: 2px solid color-mix(in srgb, var(--fc-accent) 40%, transparent); outline-offset: 2px; }
+.btn--primary.flow {
+  background-image: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.06) 100%);
+  background-repeat: repeat-x;
+  background-size: 200% 100%;
+}
+.btn--primary.flow:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  background-position: 100% 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn--primary.flow { transition: none; background-position: 0 0; }
+  .btn--primary.flow:hover { transform: none; box-shadow: var(--shadow-sm); }
+}
+

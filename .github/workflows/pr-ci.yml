@@ -1,0 +1,54 @@
+name: PR CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  ci:
+    name: Install & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare pnpm (corepack)
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.21.0 --activate
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm type-check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Create env file for build
+        run: |
+          cat > .env.local << EOF
+          NEXT_PUBLIC_APPWRITE_ENDPOINT=http://localhost:80/v1
+          NEXT_PUBLIC_APPWRITE_PROJECT_ID=default
+          NEXT_PUBLIC_APPWRITE_DATABASE_ID=default
+          EOF
+
+      - name: Build (Next.js)
+        run: pnpm build

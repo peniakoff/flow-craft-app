@@ -25,15 +25,15 @@ interface AppContextType {
   activeSprint: Sprint | null;
   selectedTeamId: string | null;
   loading: boolean;
-  setIssues: (issues: Issue[]) => void;
+  setIssues: React.Dispatch<React.SetStateAction<Issue[]>>;
   setSprints: (sprints: Sprint[]) => void;
   setActiveSprint: (sprint: Sprint | null) => void;
   setSelectedTeamId: (teamId: string | null) => void;
   loadIssues: (teamId: string) => Promise<void>;
   loadSprints: (teamId: string) => Promise<void>;
   loadTeamData: (teamId: string) => Promise<void>;
-  handleCreateIssue: (issueData: Partial<Issue>) => Promise<void>;
-  handleEditIssue: (issueData: Partial<Issue>) => Promise<void>;
+  handleCreateIssue: (issueData: Partial<Issue>) => Promise<Issue>;
+  handleEditIssue: (issueData: Partial<Issue>) => Promise<Issue>;
   handleDeleteIssue: (issueId: string) => Promise<void>;
   handleAssignToSprint: (
     issueId: string,
@@ -152,6 +152,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, authLoading, selectedTeamId, loadTeamData]);
 
+  // Note: Projects are loaded via useProjects hook's loadProjects function
+  // which is called when needed in the ProjectsProvider
+
   /**
    * Create a new issue
    */
@@ -170,6 +173,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         description: issueData.description || "",
         sprintId: issueData.sprintId || "",
         assignedUserId: issueData.assignedUserId || undefined,
+        projectId: issueData.projectId || undefined,
       } as Omit<
         Issue,
         | "$id"
@@ -181,41 +185,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       >;
 
       const createdIssue = await createIssueAPI(newIssueData);
-      setIssues([...issues, createdIssue]);
+      setIssues((prevIssues) => [...prevIssues, createdIssue]);
+      return createdIssue;
     },
-    [selectedTeamId, issues]
+    [selectedTeamId]
   );
 
   /**
    * Edit an existing issue
    */
-  const handleEditIssue = useCallback(
-    async (issueData: Partial<Issue>) => {
-      if (!issueData.$id) {
-        throw new Error("Issue ID is required");
-      }
+  const handleEditIssue = useCallback(async (issueData: Partial<Issue>) => {
+    if (!issueData.$id) {
+      throw new Error("Issue ID is required");
+    }
 
-      const updatedIssue = await updateIssueAPI(
-        issueData.$id,
-        issueData as Issue
-      );
-      setIssues(
-        issues.map((i) => (i.$id === issueData.$id ? updatedIssue : i))
-      );
-    },
-    [issues]
-  );
+    const updatedIssue = await updateIssueAPI(
+      issueData.$id,
+      issueData as Issue
+    );
+    setIssues((prevIssues) =>
+      prevIssues.map((i) => (i.$id === issueData.$id ? updatedIssue : i))
+    );
+    return updatedIssue;
+  }, []);
 
   /**
    * Delete an issue
    */
-  const handleDeleteIssue = useCallback(
-    async (issueId: string) => {
-      await deleteIssueAPI(issueId);
-      setIssues(issues.filter((i) => i.$id !== issueId));
-    },
-    [issues]
-  );
+  const handleDeleteIssue = useCallback(async (issueId: string) => {
+    await deleteIssueAPI(issueId);
+    setIssues((prevIssues) => prevIssues.filter((i) => i.$id !== issueId));
+  }, []);
 
   /**
    * Assign issue to sprint
@@ -225,9 +225,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const updatedIssue = await updateIssueAPI(issueId, {
         sprintId: sprintId || "",
       });
-      setIssues(issues.map((i) => (i.$id === issueId ? updatedIssue : i)));
+      setIssues((prevIssues) =>
+        prevIssues.map((i) => (i.$id === issueId ? updatedIssue : i))
+      );
     },
-    [issues]
+    []
   );
 
   /**

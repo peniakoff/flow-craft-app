@@ -15,6 +15,12 @@ interface AuthContextType {
   updatePassword: (oldPassword: string, newPassword: string) => Promise<void>;
   updateName: (name: string) => Promise<void>;
   deleteAccount: () => Promise<void>;
+  createRecovery: (email: string, url: string) => Promise<void>;
+  updateRecovery: (
+    userId: string,
+    secret: string,
+    password: string
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -143,6 +149,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   };
 
+  const createRecovery = async (email: string, url: string) => {
+    // Send password recovery email
+    await account.createRecovery(email, url);
+  };
+
+  const updateRecovery = async (
+    userId: string,
+    secret: string,
+    password: string
+  ) => {
+    // Complete password recovery
+    await account.updateRecovery(userId, secret, password);
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -154,6 +174,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         updatePassword,
         updateName,
         deleteAccount,
+        createRecovery,
+        updateRecovery,
       }}
     >
       {children}

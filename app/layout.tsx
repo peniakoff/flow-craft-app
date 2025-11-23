@@ -8,6 +8,7 @@ import { Roboto as V0_Font_Roboto } from "next/font/google";
 import { AppProvider } from "@/contexts/app-context";
 import { AuthProvider } from "@/contexts/auth-context";
 import { TeamsProvider } from "@/contexts/teams-context";
+import { ProjectsProvider } from "@/contexts/projects-context";
 import { ThemeProvider } from "@/components/theme-provider";
 const GeistMonoFont = V0_Font_Geist_Mono({
   weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
     "A complete task management app with sprints, kanban boards, and issue tracking",
   generator: "v0.app",
   icons: {
-    icon: "/favicon/favicon.ico",
+    icon: "/favicon/favicon.png",
   },
 };
 
@@ -48,7 +49,9 @@ export default function RootLayout({
           <AuthProvider>
             <TeamsProvider>
               <AppProvider>
-                <Suspense fallback={null}>{children}</Suspense>
+                <ProjectsProvider>
+                  <Suspense fallback={null}>{children}</Suspense>
+                </ProjectsProvider>
               </AppProvider>
             </TeamsProvider>
           </AuthProvider>

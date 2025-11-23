@@ -3,6 +3,7 @@
 import type React from "react";
 
 import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -23,13 +24,14 @@ import {
 import { Label } from "@/components/ui/label";
 import type { Issue, IssueStatus, Sprint } from "@/types";
 import { useApp } from "@/contexts/app-context";
+import { useProjects } from "@/contexts/projects-context";
 import { teams } from "@/lib/appwrite";
 import type { Models } from "appwrite";
 
 interface IssueFormProps {
   issue?: Issue;
   sprints: Sprint[];
-  onSubmit: (issueData: Partial<Issue>) => void;
+  onSubmit: (issueData: Partial<Issue>) => Promise<Issue>;
   trigger?: React.ReactNode;
 }
 
@@ -43,6 +45,8 @@ export function IssueForm({
   const { selectedTeamId } = useApp();
   const [teamMembers, setTeamMembers] = useState<Models.Membership[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { projects } = useProjects();
 
   const [formData, setFormData] = useState({
     title: issue?.title || "",
@@ -51,6 +55,7 @@ export function IssueForm({
     status: issue?.status || ("Todo" as IssueStatus),
     assignedUserId: issue?.assignedUserId || "",
     sprintId: issue?.sprintId || "0",
+    projectId: issue?.projectId || "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -83,31 +88,41 @@ export function IssueForm({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       return;
     }
 
-    onSubmit({
-      ...(issue?.$id && { $id: issue.$id }), // Preserve ID for existing issues
-      ...formData,
-      sprintId: formData.sprintId === "0" ? undefined : formData.sprintId,
-      assignedUserId: formData.assignedUserId || undefined,
-    });
-
-    setOpen(false);
-    if (!issue) {
-      // Reset form for new issues
-      setFormData({
-        title: "",
-        description: "",
-        priority: 3,
-        status: "Todo",
-        assignedUserId: "",
-        sprintId: "0",
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        ...(issue?.$id && { $id: issue.$id }),
+        ...formData,
+        sprintId: formData.sprintId === "0" ? undefined : formData.sprintId,
+        assignedUserId: formData.assignedUserId || undefined,
+        projectId: formData.projectId || undefined,
       });
+
+      setOpen(false);
+      if (!issue) {
+        setFormData({
+          title: "",
+          description: "",
+          priority: 3,
+          status: "Todo",
+          assignedUserId: "",
+          sprintId: "0",
+          projectId: "",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to submit issue:", error);
+      // Optionally show user-friendly error message
+      throw error; // Re-throw to allow parent component to handle
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -245,6 +260,31 @@ export function IssueForm({
             </Select>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="project">Project (Optional)</Label>
+            <Select
+              value={formData.projectId || "none"}
+              onValueChange={(value) =>
+                setFormData({
+                  ...formData,
+                  projectId: value === "none" ? "" : value,
+                })
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Project</SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.$id} value={project.$id || ""}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="flex justify-end gap-2">
             <Button
               type="button"
@@ -253,7 +293,10 @@ export function IssueForm({
             >
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
               {issue ? "Update Issue" : "Create Issue"}
             </Button>
           </div>

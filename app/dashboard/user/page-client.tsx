@@ -2,8 +2,6 @@
 
 import { useAuth } from "@/contexts/auth-context";
 import { UpdateNameForm } from "@/components/update-name-form";
-import { ChangePasswordForm } from "@/components/change-password-form";
-import { DeleteAccountDialog } from "@/components/delete-account-dialog";
 import {
   Card,
   CardContent,
@@ -11,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import Link from "next/link";
@@ -53,11 +50,11 @@ export function PageClient() {
           />
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">Account Settings</h1>
+          <h1 className="text-3xl font-bold">Profile</h1>
         </div>
       </div>
       <p className="text-muted-foreground mb-8">
-        Manage your profile and account settings
+        Manage your profile information
       </p>
 
       <div className="space-y-6">
@@ -71,37 +68,6 @@ export function PageClient() {
           </CardHeader>
           <CardContent>
             <UpdateNameForm currentName={user.name || ""} />
-          </CardContent>
-        </Card>
-
-        <Separator />
-
-        {/* Change Password Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-            <CardDescription>
-              Update your password to increase account security
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ChangePasswordForm />
-          </CardContent>
-        </Card>
-
-        <Separator />
-
-        {/* Delete Account Section */}
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Delete Account</CardTitle>
-            <CardDescription>
-              This action is irreversible. All your data will be permanently
-              deleted.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DeleteAccountDialog />
           </CardContent>
         </Card>
       </div>

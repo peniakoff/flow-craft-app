@@ -1,6 +1,11 @@
 export type Priority = number
 export type IssueStatus = "Todo" | "In Progress" | "In Review" | "Done"
 export type SprintStatus = "Planned" | "Active" | "Completed"
+export type ProjectStatus =
+  | "Planned"
+  | "In Progress"
+  | "At Risk"
+  | "Completed"
 
 // Base interface for Appwrite database documents
 export interface AppwriteDBType {
@@ -21,6 +26,7 @@ export interface Issue extends AppwriteDBType {
   assignedUserId?: string // References Appwrite User.$id (UUID)
   teamId: string // References Team.$id
   priority: number // 1-5 range as per database constraints
+  projectId?: string // References Project.$id
 }
 
 export interface Sprint extends AppwriteDBType {
@@ -30,6 +36,18 @@ export interface Sprint extends AppwriteDBType {
   endDate: string // ISO datetime string
   teamId: string // References Team.$id
   sprintStatus: SprintStatus
+}
+
+export interface Project extends AppwriteDBType {
+  teamId?: string | null
+  name: string
+  description?: string
+  ownerId: string
+  ownerName?: string
+  status: ProjectStatus
+  startDate?: string
+  dueDate?: string
+  isPrivate?: boolean
 }
 
 export type ViewType = "issues" | "current-sprint" | "sprints" | "teams"

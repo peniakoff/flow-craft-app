@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -11,15 +10,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IssueCard } from "./issue-card";
-import { IssueForm } from "./issue-form";
-import { Search, Plus } from "lucide-react";
+import { Search } from "lucide-react";
 import type { Issue, Sprint, IssueStatus } from "@/types";
 
 interface IssuesListProps {
   issues: Issue[];
   sprints: Sprint[];
-  onCreateIssue: (issueData: Partial<Issue>) => void;
-  onEditIssue: (issueData: Partial<Issue>) => void;
+  onCreateIssue: (issueData: Partial<Issue>) => Promise<Issue>;
+  onEditIssue: (issueData: Partial<Issue>) => Promise<Issue>;
   onDeleteIssue: (issueId: string) => void;
   onAssignToSprint: (issueId: string, sprintId: string | undefined) => void;
 }
@@ -27,7 +25,7 @@ interface IssuesListProps {
 export function IssuesList({
   issues,
   sprints,
-  onCreateIssue,
+  onCreateIssue: _onCreateIssue,
   onEditIssue,
   onDeleteIssue,
   onAssignToSprint,
@@ -60,20 +58,6 @@ export function IssuesList({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Issues</h1>
-        <IssueForm
-          sprints={sprints}
-          onSubmit={onCreateIssue}
-          trigger={
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Issue
-            </Button>
-          }
-        />
-      </div>
-
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />

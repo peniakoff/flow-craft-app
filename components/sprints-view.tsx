@@ -1,9 +1,6 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { SprintCard } from "./sprint-card";
-import { SprintForm } from "./sprint-form";
-import { Plus } from "lucide-react";
 import type { Sprint, Issue } from "@/types";
 
 interface SprintsViewProps {
@@ -18,7 +15,7 @@ interface SprintsViewProps {
 export function SprintsView({
   sprints,
   issues,
-  onCreateSprint,
+  onCreateSprint: _onCreateSprint,
   onEditSprint,
   onStartSprint,
   onEndSprint,
@@ -39,19 +36,6 @@ export function SprintsView({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Sprints</h1>
-        <SprintForm
-          onSubmit={onCreateSprint}
-          trigger={
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Sprint
-            </Button>
-          }
-        />
-      </div>
-
       {hasActiveSprint && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">

@@ -297,8 +297,20 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    loadProjects(selectedTeamId);
-  }, [selectedTeamId, loadProjects]);
+    void loadProjects(selectedTeamId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTeamId]);
+
+  // Memoize project assignments to avoid unnecessary re-calculations
+  const issueProjectMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const issue of issues) {
+      if (issue.$id && issue.projectId) {
+        map[issue.$id] = issue.projectId;
+      }
+    }
+    return map;
+  }, [issues]);
 
   // Sync project assignments from issues' projectId field
   useEffect(() => {
@@ -312,19 +324,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         return prev;
       }
 
-      // Build assignments from issues' projectId
-      const newAssignments: Record<string, string> = {};
-      for (const issue of issues) {
-        if (issue.$id && issue.projectId) {
-          newAssignments[issue.$id] = issue.projectId;
-        }
-      }
-
       // Check if assignments changed
       const hasChanged =
-        Object.keys(newAssignments).length !==
+        Object.keys(issueProjectMap).length !==
           Object.keys(bucket.assignments).length ||
-        Object.entries(newAssignments).some(
+        Object.entries(issueProjectMap).some(
           ([issueId, projectId]) => bucket.assignments[issueId] !== projectId
         );
 
@@ -336,11 +340,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         ...prev,
         [selectedTeamId]: {
           ...bucket,
-          assignments: newAssignments,
+          assignments: issueProjectMap,
         },
       };
     });
-  }, [issues, selectedTeamId]);
+  }, [issueProjectMap, selectedTeamId]);
 
   const value: ProjectsContextValue = {
     projects: currentBucket.projects,

@@ -304,9 +304,21 @@ export async function deleteProject(projectId: string): Promise<void> {
   }
 }
 
+/**
+ * Calculate the start and end dates for the quarter containing the given date.
+ * Quarters are defined as: Q1 (Jan-Mar), Q2 (Apr-Jun), Q3 (Jul-Sep), Q4 (Oct-Dec).
+ * 
+ * @param date - The date to find the quarter bounds for
+ * @returns Object with start and end dates as ISO strings
+ * 
+ * @example
+ * getQuarterBounds(new Date('2024-05-15'))
+ * // Returns: { start: '2024-04-01T00:00:00.000Z', end: '2024-06-30T23:59:59.999Z' }
+ */
 function getQuarterBounds(date: Date) {
   const quarter = Math.floor(date.getMonth() / 3)
   const start = new Date(date.getFullYear(), quarter * 3, 1)
+  // Using day 0 of the next month gives last day of previous month
   const end = new Date(date.getFullYear(), quarter * 3 + 3, 0, 23, 59, 59, 999)
   return {
     start: start.toISOString(),

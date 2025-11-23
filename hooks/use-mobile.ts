@@ -11,7 +11,7 @@ export function useIsMobile(breakpoint: number = DEFAULT_BREAKPOINT) {
   }, [breakpoint])
 
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(
-    getValue
+    undefined
   )
 
   React.useEffect(() => {

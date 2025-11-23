@@ -436,8 +436,11 @@ export function ProjectsPageClient() {
                           <Progress value={progress} className="h-2" />
                         </div>
                       ) : (
-                        <span className="text-xs text-muted-foreground">
-                          Switch working team to view progress
+                        <span
+                          className="text-xs text-muted-foreground"
+                          aria-label={`Project progress unavailable: Switch to ${teamLabel} team to view progress for ${project.name}`}
+                        >
+                          Switch to project&apos;s team to view progress
                         </span>
                       )}
                     </TableCell>

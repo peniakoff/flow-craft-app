@@ -118,7 +118,7 @@ export function TeamsPageClient() {
         const memberships = await getMemberships(newTeam.$id);
         setTeamMemberships({
           ...teamMemberships,
-          [newTeam.$id]: (memberships as unknown as TeamMember[]) || [],
+          [newTeam.$id]: memberships || [],
         });
       } catch (error) {
         console.error(

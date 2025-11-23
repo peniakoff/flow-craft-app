@@ -117,6 +117,10 @@ export function IssueForm({
           projectId: "",
         });
       }
+    } catch (error) {
+      console.error("Failed to submit issue:", error);
+      // Optionally show user-friendly error message
+      throw error; // Re-throw to allow parent component to handle
     } finally {
       setIsSubmitting(false);
     }

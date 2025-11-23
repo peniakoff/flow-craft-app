@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 export default async function ProjectDetailsPage({
   params,
 }: {
-  params: { projectId: string };
+  params: Promise<{ projectId: string }>;
 }) {
-  const projectId = (await params).projectId;
+  const { projectId } = await params;
   return <ProjectDetailsPageClient projectId={projectId} />;
 }

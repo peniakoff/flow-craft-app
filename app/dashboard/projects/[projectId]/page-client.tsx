@@ -219,7 +219,7 @@ export function ProjectDetailsPageClient({
   }
 
   // Check access permissions for private projects
-  if (project.isPrivate && user && project.ownerId !== user.$id) {
+  if (project.isPrivate && (!user || project.ownerId !== user.$id)) {
     return (
       <Card>
         <CardHeader>
@@ -252,7 +252,7 @@ export function ProjectDetailsPageClient({
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard/issues">
+              <BreadcrumbLink href="/dashboard/projects">
                 Dashboard
               </BreadcrumbLink>
             </BreadcrumbItem>

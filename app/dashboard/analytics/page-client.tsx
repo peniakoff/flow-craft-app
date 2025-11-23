@@ -26,6 +26,15 @@ import {
   Line,
 } from "recharts";
 import { useApp } from "@/contexts/app-context";
+import { useTeams } from "@/contexts/teams-context";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
   Clock,
   Users,
@@ -64,7 +73,34 @@ const COLORS = [
 ];
 
 export function AnalyticsPageClient() {
-  const { issues, sprints } = useApp();
+  const { issues, sprints, selectedTeamId, loading } = useApp();
+  const { teams } = useTeams();
+
+  const selectedTeamName = selectedTeamId
+    ? teams.find((team) => team.$id === selectedTeamId)?.name || "Team"
+    : "No team";
+
+  const breadcrumb = (
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink href="/dashboard/projects">Dashboard</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbLink href="/dashboard/teams">Team</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>{selectedTeamName}</BreadcrumbPage>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>Analytics</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  );
 
   const engineerStats = useMemo((): EngineerStats[] => {
     const engineerMap = new Map<string, EngineerStats>();
@@ -200,8 +236,34 @@ export function AnalyticsPageClient() {
       };
     }, [issues]);
 
+  if (!selectedTeamId) {
+    return (
+      <div className="space-y-4">
+        {breadcrumb}
+        <div className="text-center py-12">
+          <h2 className="text-2xl font-semibold mb-4">No Team Selected</h2>
+          <p className="text-muted-foreground">
+            Choose a working team to view detailed analytics.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {breadcrumb}
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <>
+    <div className="space-y-6">
+      {breadcrumb}
       <div className="mb-8">
         <h1 className="text-2xl font-semibold">Analytics Dashboard</h1>
         <p className="text-muted-foreground">
@@ -614,6 +676,6 @@ export function AnalyticsPageClient() {
           </div>
         </TabsContent>
       </Tabs>
-    </>
+    </div>
   );
 }

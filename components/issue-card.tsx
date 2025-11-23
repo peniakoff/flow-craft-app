@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Edit, Trash2, ArrowUpDown } from "lucide-react";
+import { Edit, Trash2, ArrowUpDown, MoreVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,11 +25,12 @@ import { IssueForm } from "./issue-form";
 import { IssueAssignmentDialog } from "./issue-assignment-dialog";
 import { priorityColors, statusColors } from "@/lib/data";
 import type { Issue, Sprint } from "@/types";
+import { useProjects } from "@/contexts/projects-context";
 
 interface IssueCardProps {
   issue: Issue;
   sprints: Sprint[];
-  onEdit: (issueData: Partial<Issue>) => void;
+  onEdit: (issueData: Partial<Issue>) => Promise<Issue>;
   onDelete: (issueId: string) => void;
   onAssignToSprint: (issueId: string, sprintId: string | undefined) => void;
   showSprint?: boolean;
@@ -44,9 +45,13 @@ export function IssueCard({
   showSprint = true,
 }: IssueCardProps) {
   const sprint = sprints.find((s) => s.$id === issue.sprintId);
+  const { projects } = useProjects();
+  const project = issue.projectId
+    ? projects.find((candidate) => candidate.$id === issue.projectId)
+    : null;
 
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow min-w-[270px]">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -66,7 +71,7 @@ export function IssueCard({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <MoreHorizontal className="h-4 w-4" />
+                <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -144,6 +149,11 @@ export function IssueCard({
                 className="text-xs text-muted-foreground"
               >
                 Backlog
+              </Badge>
+            )}
+            {project && (
+              <Badge variant="outline" className="text-xs border-dashed">
+                {project.name}
               </Badge>
             )}
           </div>

@@ -18,8 +18,8 @@ import type { Issue, Sprint, IssueStatus } from "@/types";
 interface IssuesListProps {
   issues: Issue[];
   sprints: Sprint[];
-  onCreateIssue: (issueData: Partial<Issue>) => void;
-  onEditIssue: (issueData: Partial<Issue>) => void;
+  onCreateIssue: (issueData: Partial<Issue>) => Promise<Issue>;
+  onEditIssue: (issueData: Partial<Issue>) => Promise<Issue>;
   onDeleteIssue: (issueId: string) => void;
   onAssignToSprint: (issueId: string, sprintId: string | undefined) => void;
 }

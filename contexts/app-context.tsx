@@ -32,8 +32,8 @@ interface AppContextType {
   loadIssues: (teamId: string) => Promise<void>;
   loadSprints: (teamId: string) => Promise<void>;
   loadTeamData: (teamId: string) => Promise<void>;
-  handleCreateIssue: (issueData: Partial<Issue>) => Promise<void>;
-  handleEditIssue: (issueData: Partial<Issue>) => Promise<void>;
+  handleCreateIssue: (issueData: Partial<Issue>) => Promise<Issue>;
+  handleEditIssue: (issueData: Partial<Issue>) => Promise<Issue>;
   handleDeleteIssue: (issueId: string) => Promise<void>;
   handleAssignToSprint: (
     issueId: string,
@@ -138,23 +138,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [loadIssues, loadSprints]
   );
 
-  /**
-   * Load data when selectedTeamId changes and user is authenticated
-   */
-  useEffect(() => {
-    if (!authLoading && user && selectedTeamId) {
-      loadTeamData(selectedTeamId);
-    } else if (!user || !selectedTeamId) {
-      // Clear data when no team is selected or user is not authenticated
-      setIssues([]);
-      setSprints([]);
-      setActiveSprint(null);
-    }
-  }, [user, authLoading, selectedTeamId, loadTeamData]);
+   /**
+    * Load data when selectedTeamId changes and user is authenticated
+    */
+   useEffect(() => {
+     if (!authLoading && user && selectedTeamId) {
+       loadTeamData(selectedTeamId);
+     } else if (!user || !selectedTeamId) {
+       // Clear data when no team is selected or user is not authenticated
+       setIssues([]);
+       setSprints([]);
+       setActiveSprint(null);
+     }
+   }, [user, authLoading, selectedTeamId, loadTeamData]);
 
-  /**
-   * Create a new issue
-   */
+   // Note: Projects are loaded via useProjects hook's loadProjects function
+   // which is called when needed in the ProjectsProvider
+
+   /**
+    * Create a new issue
+    */
   const handleCreateIssue = useCallback(
     async (issueData: Partial<Issue> & { assignee?: string }) => {
       if (!selectedTeamId) {
@@ -181,7 +184,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       >;
 
       const createdIssue = await createIssueAPI(newIssueData);
-      setIssues([...issues, createdIssue]);
+      const enrichedIssue: Issue = {
+        ...createdIssue,
+        projectId: issueData.projectId,
+      };
+      setIssues([...issues, enrichedIssue]);
+      return enrichedIssue;
     },
     [selectedTeamId, issues]
   );
@@ -195,13 +203,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         throw new Error("Issue ID is required");
       }
 
+      const { projectId, ...persistable } = issueData;
       const updatedIssue = await updateIssueAPI(
         issueData.$id,
-        issueData as Issue
+        persistable as Issue
       );
+      const enrichedIssue: Issue = {
+        ...updatedIssue,
+        projectId:
+          projectId !== undefined
+            ? projectId
+            : issues.find((i) => i.$id === issueData.$id)?.projectId,
+      };
       setIssues(
-        issues.map((i) => (i.$id === issueData.$id ? updatedIssue : i))
+        issues.map((i) => (i.$id === issueData.$id ? enrichedIssue : i))
       );
+      return enrichedIssue;
     },
     [issues]
   );

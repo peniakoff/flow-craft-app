@@ -118,6 +118,10 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
             teamId: team.$id,
             prefs: { description },
           });
+
+          // Fetch the updated team to get the prefs
+          const updatedTeam = (await teamsSDK.get(team.$id)) as Team;
+          return updatedTeam;
         }
 
         return team;

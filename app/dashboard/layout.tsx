@@ -4,6 +4,7 @@ import { useEffect, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { AppSidebar } from "@/components/app-sidebar";
+import { TeamSwitcher } from "@/components/team-switcher";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -31,9 +32,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <SidebarProvider defaultOpen={!isMobile}>
+    <SidebarProvider
+      key={isMobile ? "mobile" : "desktop"}
+      defaultOpen={!isMobile}
+    >
       <AppSidebar />
       <SidebarInset>
+        <div className="border-b bg-card/60 backdrop-blur supports-backdrop-filter:bg-card/80">
+          <div className="container mx-auto px-4 py-4">
+            <TeamSwitcher />
+          </div>
+        </div>
         <main className="flex-1 overflow-auto">
           <div className="container mx-auto px-4 py-8">{children}</div>
         </main>

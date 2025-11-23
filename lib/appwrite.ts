@@ -25,6 +25,7 @@ export const DATABASE_ID = process.env.NEXT_PUBLIC_APPWRITE_DATABASE_ID!;
 export const TABLE_IDS = {
     issue: 'issue',
     sprint: 'sprint',
+    project: 'project',
 }
 
 export { ID } from 'appwrite';

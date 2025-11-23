@@ -7,6 +7,14 @@ import { useAuth } from "@/contexts/auth-context";
 import { useTeams } from "@/contexts/teams-context";
 import { useApp } from "@/contexts/app-context";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import type { Team, TeamMember } from "@/types/teams.types";
 import { AppwriteException } from "appwrite";
 
@@ -96,11 +104,23 @@ export function TeamsPageClient() {
     try {
       const newTeam = await createTeam(data.name, data.description);
       setTeams([...teams, newTeam]);
-      // Initialize empty memberships for new team - they'll be loaded when accessed
-      setTeamMemberships({
-        ...teamMemberships,
-        [newTeam.$id]: [],
-      });
+      // Load memberships for the new team to show owner status and enable functionality
+      try {
+        const memberships = await getMemberships(newTeam.$id);
+        setTeamMemberships({
+          ...teamMemberships,
+          [newTeam.$id]: (memberships as unknown as TeamMember[]) || [],
+        });
+      } catch (error) {
+        console.error(
+          `Failed to load memberships for new team ${newTeam.$id}:`,
+          error
+        );
+        setTeamMemberships({
+          ...teamMemberships,
+          [newTeam.$id]: [],
+        });
+      }
       toast({
         title: "Success",
         description: "Team created successfully",
@@ -212,15 +232,39 @@ export function TeamsPageClient() {
   };
 
   return (
-    <TeamsView
-      teams={teams}
-      teamMemberships={teamMemberships}
-      selectedTeamId={selectedTeamId}
-      onCreateTeam={handleCreateTeam}
-      onDeleteTeam={handleDeleteTeam}
-      onInviteUser={handleInviteUser}
-      onRemoveMember={handleRemoveMember}
-      onSelectTeam={handleSelectTeam}
-    />
+    <div className="space-y-6">
+      <div className="space-y-3">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/dashboard/issues">
+                Dashboard
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Teams</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Teams</h1>
+          <p className="text-muted-foreground mt-2">
+            Create and manage teams, invite members, and collaborate on projects
+            together.
+          </p>
+        </div>
+      </div>
+      <TeamsView
+        teams={teams}
+        teamMemberships={teamMemberships}
+        selectedTeamId={selectedTeamId}
+        onCreateTeam={handleCreateTeam}
+        onDeleteTeam={handleDeleteTeam}
+        onInviteUser={handleInviteUser}
+        onRemoveMember={handleRemoveMember}
+        onSelectTeam={handleSelectTeam}
+      />
+    </div>
   );
 }

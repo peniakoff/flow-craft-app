@@ -17,6 +17,7 @@ import {
   ChevronUp,
   Sun,
   Moon,
+  Rocket,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
@@ -31,12 +32,18 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarMenuBadge,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarSeparator,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,7 +77,24 @@ export function AppSidebar() {
     (issue) => issue.sprintId === activeSprint?.$id
   );
 
-  const navItems = [
+  const { selectedTeamId } = useApp();
+  const selectedTeam = useTeams().teams.find((t) => t.$id === selectedTeamId);
+
+  const workspaceNav = [
+    {
+      label: "Projects",
+      icon: Rocket,
+      href: "/dashboard/projects",
+    },
+    {
+      label: "Teams",
+      icon: Users,
+      count: teamsCount,
+      href: "/dashboard/teams",
+    },
+  ];
+
+  const teamNav = [
     {
       label: "Issues",
       icon: List,
@@ -91,12 +115,6 @@ export function AppSidebar() {
       href: "/dashboard/sprints",
     },
     {
-      label: "Teams",
-      icon: Users,
-      count: teamsCount,
-      href: "/dashboard/teams",
-    },
-    {
       label: "Analytics",
       icon: BarChart3,
       count: issues.filter((i) => i.status === "Done").length,
@@ -105,13 +123,13 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="z-50">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link
-                href="/dashboard/issues"
+                href="/dashboard/projects"
                 className="flex items-center gap-2"
               >
                 <Image
@@ -131,49 +149,95 @@ export function AppSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
+          <SidebarGroupLabel>Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => {
+              {workspaceNav.map((item) => {
                 const Icon = item.icon;
                 const isActive = pathname === item.href;
-                const isDisabled = item.disabled;
-
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton
-                      asChild={!isDisabled}
-                      disabled={isDisabled}
-                      isActive={isActive}
-                      tooltip={item.label}
-                      className={cn(
-                        isDisabled && "opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      {isDisabled ? (
-                        <span className="flex items-center gap-2">
-                          <Icon className="h-4 w-4" />
-                          <span>{item.label}</span>
-                        </span>
-                      ) : (
-                        <Link href={item.href}>
-                          <Icon className="h-4 w-4" />
-                          <span>{item.label}</span>
-                        </Link>
-                      )}
+                    <SidebarMenuButton asChild isActive={isActive}>
+                      <Link href={item.href}>
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
                     </SidebarMenuButton>
-                    {item.count !== undefined && (
-                      <SidebarMenuBadge>
-                        <Badge variant="outline" className="text-xs">
-                          {item.count}
-                        </Badge>
-                      </SidebarMenuBadge>
-                    )}
                   </SidebarMenuItem>
                 );
               })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {selectedTeam && (
+          <>
+            <SidebarSeparator className="transition-opacity duration-200" />
+            <SidebarGroup className="transition-all duration-200 animate-in fade-in slide-in-from-top-2">
+              <SidebarGroupLabel>
+                <div className="flex w-full items-center gap-2 overflow-hidden">
+                  <div className="shrink-0">Team Views</div>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant="outline"
+                        className="ml-auto flex-1 min-w-0 text-xs cursor-default"
+                      >
+                        <span className="overflow-hidden text-ellipsis whitespace-nowrap">
+                          {selectedTeam.name}
+                        </span>
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      {selectedTeam.name}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {teamNav.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = pathname === item.href;
+                    const isDisabled = item.disabled;
+
+                    return (
+                      <SidebarMenuItem key={item.href}>
+                        <SidebarMenuButton
+                          asChild={!isDisabled}
+                          disabled={isDisabled}
+                          isActive={isActive}
+                          tooltip={item.label}
+                          className={cn(
+                            isDisabled && "opacity-50 cursor-not-allowed"
+                          )}
+                        >
+                          {isDisabled ? (
+                            <>
+                              <Icon className="h-4 w-4" />
+                              <span>{item.label}</span>
+                            </>
+                          ) : (
+                            <Link href={item.href}>
+                              <Icon className="h-4 w-4" />
+                              <span>{item.label}</span>
+                            </Link>
+                          )}
+                        </SidebarMenuButton>
+                        <div className="absolute right-1 top-1.5 flex items-center gap-1 pointer-events-none peer-data-[size=sm]/menu-button:top-1 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden">
+                          {item.count !== undefined && (
+                            <Badge variant="outline" className="text-xs">
+                              {item.count}
+                            </Badge>
+                          )}
+                        </div>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
@@ -200,15 +264,17 @@ export function AppSidebar() {
                     <span>Profile</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="h-4 w-4 mr-2" />
-                  <span>Settings</span>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings" className="cursor-pointer">
+                    <Settings className="h-4 w-4 mr-2" />
+                    <span>Settings</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled className="cursor-not-allowed">
                   <HelpCircle className="h-4 w-4 mr-2" />
                   <span>Help</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
+                <DropdownMenuItem disabled className="cursor-not-allowed">
                   <MessageSquare className="h-4 w-4 mr-2" />
                   <span>Feedback</span>
                 </DropdownMenuItem>

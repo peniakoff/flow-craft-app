@@ -19,7 +19,7 @@ export function RegisterPageClient() {
   const searchParams = useSearchParams();
   const { user, loading } = useAuth();
   const [mounted, setMounted] = useState(false);
-  const redirectTo = searchParams.get("redirect") || "/dashboard/issues";
+  const redirectTo = searchParams.get("redirect") || "/dashboard/teams";
 
   useEffect(() => {
     setMounted(true);

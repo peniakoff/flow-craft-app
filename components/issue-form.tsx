@@ -46,8 +46,7 @@ export function IssueForm({
   const [teamMembers, setTeamMembers] = useState<Models.Membership[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { projects, assignIssueToProject, removeIssueFromProject } =
-    useProjects();
+  const { projects } = useProjects();
 
   const [formData, setFormData] = useState({
     title: issue?.title || "",
@@ -98,22 +97,13 @@ export function IssueForm({
 
     setIsSubmitting(true);
     try {
-      const result = await onSubmit({
+      await onSubmit({
         ...(issue?.$id && { $id: issue.$id }),
         ...formData,
         sprintId: formData.sprintId === "0" ? undefined : formData.sprintId,
         assignedUserId: formData.assignedUserId || undefined,
         projectId: formData.projectId || undefined,
       });
-
-      const resolvedIssueId = result?.$id || issue?.$id;
-      if (resolvedIssueId) {
-        if (formData.projectId) {
-          assignIssueToProject(resolvedIssueId, formData.projectId);
-        } else if (issue?.projectId) {
-          removeIssueFromProject(resolvedIssueId);
-        }
-      }
 
       setOpen(false);
       if (!issue) {
@@ -280,14 +270,14 @@ export function IssueForm({
               <SelectTrigger>
                 <SelectValue placeholder="Select project" />
               </SelectTrigger>
-               <SelectContent>
-                 <SelectItem value="none">No Project</SelectItem>
-                 {projects.map((project) => (
-                   <SelectItem key={project.$id} value={project.$id || ""}>
-                     {project.name}
-                   </SelectItem>
-                 ))}
-               </SelectContent>
+              <SelectContent>
+                <SelectItem value="none">No Project</SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.$id} value={project.$id || ""}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
             </Select>
           </div>
 

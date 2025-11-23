@@ -33,7 +33,7 @@ export function LandingPageClient() {
   useEffect(() => {
     // If user is already logged in, redirect to dashboard
     if (!loading && user) {
-      router.push("/dashboard/issues");
+      router.push("/dashboard/teams");
     }
   }, [user, loading, router]);
 

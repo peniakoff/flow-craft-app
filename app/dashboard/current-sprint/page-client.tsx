@@ -2,74 +2,12 @@
 
 import { CurrentSprintView } from "@/components/current-sprint-view";
 import { useApp } from "@/contexts/app-context";
-import { useTeams } from "@/contexts/teams-context";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { DashboardPageLayout } from "@/components/dashboard/page-layout";
+import { Badge } from "@/components/ui/badge";
 import type { IssueStatus } from "@/types";
 
 export function CurrentSprintPageClient() {
-  const { issues, activeSprint, selectedTeamId, loading, handleEditIssue } =
-    useApp();
-  const { teams } = useTeams();
-
-  const selectedTeamName = selectedTeamId
-    ? teams.find((team) => team.$id === selectedTeamId)?.name || "Team"
-    : "No team";
-
-  const breadcrumb = (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard/projects">Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard/teams">Team</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>{selectedTeamName}</BreadcrumbPage>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>Current Sprint</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
-
-  // Show message if no team is selected
-  if (!selectedTeamId) {
-    return (
-      <div className="space-y-4">
-        {breadcrumb}
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-semibold mb-4">No Team Selected</h2>
-          <p className="text-muted-foreground mb-4">
-            Please select a team from the Teams page to view the current sprint.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // Show loading state
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {breadcrumb}
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
+  const { issues, activeSprint, loading, handleEditIssue } = useApp();
 
   const handleUpdateIssueStatus = async (
     issueId: string,
@@ -82,20 +20,28 @@ export function CurrentSprintPageClient() {
   };
 
   return (
-    <div className="space-y-6">
-      {breadcrumb}
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Current Sprint</h1>
-        <p className="text-muted-foreground mt-2">
-          Track progress and manage tasks in your active sprint with kanban
-          board view.
-        </p>
-      </div>
+    <DashboardPageLayout
+      pageName="Current Sprint"
+      pageTitle="Current Sprint"
+      pageDescription="Track progress and manage tasks in your active sprint with kanban board view."
+      loading={loading}
+      emptyDescription="Please select a team from the Teams page to view the current sprint."
+      headerActions={
+        activeSprint ? (
+          <Badge
+            className="bg-green-100 text-green-800 border-green-200"
+            variant="outline"
+          >
+            Active
+          </Badge>
+        ) : null
+      }
+    >
       <CurrentSprintView
         sprint={activeSprint || null}
         issues={issues}
         onUpdateIssueStatus={handleUpdateIssueStatus}
       />
-    </div>
+    </DashboardPageLayout>
   );
 }

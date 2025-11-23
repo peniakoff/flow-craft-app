@@ -22,7 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { InviteUserForm } from "./invite-user-form";
+import { InviteUserDialog } from "./invite-user-dialog";
 
 interface TeamCardProps {
   team: Team;
@@ -49,7 +49,7 @@ export function TeamCard({
   onSelectTeam,
 }: TeamCardProps) {
   const { user } = useAuth();
-  const [showInvite, setShowInvite] = useState(false);
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   // Check if current user is team owner
   const userMembership = members.find((m) => m.userId === user?.$id);
@@ -59,11 +59,6 @@ export function TeamCard({
     if (checked) {
       onSelectTeam(team.$id);
     }
-  };
-
-  const handleInviteSuccess = async () => {
-    setShowInvite(false);
-    // Members will be updated from parent component
   };
 
   const handleRemoveMember = async (membershipId: string) => {
@@ -145,24 +140,13 @@ export function TeamCard({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setShowInvite(!showInvite)}
+              onClick={() => setInviteDialogOpen(true)}
             >
               <UserPlus className="h-4 w-4 mr-2" />
               Invite
             </Button>
           )}
         </div>
-
-        {showInvite && (
-          <div className="pt-4 border-t">
-            <InviteUserForm
-              teamId={team.$id}
-              onInvite={onInviteUser}
-              onSuccess={handleInviteSuccess}
-              onCancel={() => setShowInvite(false)}
-            />
-          </div>
-        )}
 
         {members.length > 0 && (
           <div className="space-y-2">
@@ -216,6 +200,15 @@ export function TeamCard({
           </div>
         )}
       </CardContent>
+
+      {/* Invite User Dialog */}
+      <InviteUserDialog
+        open={inviteDialogOpen}
+        onOpenChange={setInviteDialogOpen}
+        teamId={team.$id}
+        teamName={team.name}
+        onInvite={onInviteUser}
+      />
     </Card>
   );
 }

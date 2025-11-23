@@ -184,13 +184,36 @@ export async function deleteSprint(sprintId: string): Promise<void> {
 
 /**
  * Fetch projects for a specific team from Appwrite
+ * @param teamId - The ID of the team
+ * @param viewerId - Optional viewer ID for access control (to include their private projects)
  */
-export async function fetchProjectsByTeamId(teamId: string): Promise<Project[]> {
+export async function fetchProjectsByTeamId(
+  teamId: string,
+  viewerId?: string
+): Promise<Project[]> {
   try {
+    const queries = [Query.equal("teamId", [teamId])]
+
+    // Security: Only show non-private projects OR private projects owned by viewer
+    if (viewerId) {
+      queries.push(
+        Query.or([
+          Query.equal("isPrivate", [false]),
+          Query.and([
+            Query.equal("isPrivate", [true]),
+            Query.equal("ownerId", [viewerId])
+          ])
+        ])
+      )
+    } else {
+      // If no viewer, only show non-private projects
+      queries.push(Query.equal("isPrivate", [false]))
+    }
+
     const response = await databases.listDocuments(
       DATABASE_ID,
       TABLE_IDS.project,
-      [Query.equal("teamId", [teamId])]
+      queries
     )
     return response.documents as unknown as Project[]
   } catch (error) {
@@ -201,15 +224,28 @@ export async function fetchProjectsByTeamId(teamId: string): Promise<Project[]> 
 
 /**
  * Fetch a single project by its ID from Appwrite
+ * @param projectId - The ID of the project to fetch
+ * @param viewerId - Optional viewer ID for access control
+ * @throws Error if project is private and viewer is not the owner
  */
-export async function fetchProjectById(projectId: string): Promise<Project> {
+export async function fetchProjectById(
+  projectId: string,
+  viewerId?: string
+): Promise<Project> {
   try {
     const response = await databases.getDocument(
       DATABASE_ID,
       TABLE_IDS.project,
       projectId
     )
-    return response as unknown as Project
+    const project = response as unknown as Project
+
+    // Security check: If project is private, only owner can access it
+    if (project.isPrivate && project.ownerId !== viewerId) {
+      throw new Error("Access denied: This is a private project")
+    }
+
+    return project
   } catch (error) {
     console.error("Failed to fetch project:", error)
     throw error
@@ -303,12 +339,50 @@ export async function fetchProjectsDirectory(
   }
 
   if (privateOnly) {
+    // Show only private projects owned by the viewer
     queries.push(Query.equal("isPrivate", [true]))
     if (viewerId) {
       queries.push(Query.equal("ownerId", [viewerId]))
     }
   } else if (teamId) {
+    // Show team projects, but exclude private projects of other users
     queries.push(Query.equal("teamId", [teamId]))
+    
+    // Security filter: Only show non-private projects OR private projects owned by viewer
+    if (viewerId) {
+      queries.push(
+        Query.or([
+          Query.equal("isPrivate", [false]),
+          Query.and([
+            Query.equal("isPrivate", [true]),
+            Query.equal("ownerId", [viewerId])
+          ])
+        ])
+      )
+    } else {
+      // If no viewer, only show non-private projects
+      queries.push(Query.equal("isPrivate", [false]))
+    }
+  } else {
+    // "All Teams" filter - show all non-private team projects + viewer's private projects
+    if (viewerId) {
+      queries.push(
+        Query.or([
+          Query.and([
+            Query.equal("isPrivate", [false]),
+            Query.isNotNull("teamId")
+          ]),
+          Query.and([
+            Query.equal("isPrivate", [true]),
+            Query.equal("ownerId", [viewerId])
+          ])
+        ])
+      )
+    } else {
+      // If no viewer, only show non-private projects with teams
+      queries.push(Query.equal("isPrivate", [false]))
+      queries.push(Query.isNotNull("teamId"))
+    }
   }
 
   if (!privateOnly && ownerId) {

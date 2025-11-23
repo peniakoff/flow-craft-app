@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TeamsView } from "@/components/teams-view";
+import { PendingInvitations } from "@/components/pending-invitations";
 import { useAuth } from "@/contexts/auth-context";
 import { useTeams } from "@/contexts/teams-context";
 import { useApp } from "@/contexts/app-context";
@@ -15,7 +16,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import type { Team, TeamMember } from "@/types/teams.types";
+import type { Team, TeamMember, Membership } from "@/types/teams.types";
 import { AppwriteException } from "appwrite";
 
 interface TeamMembershipsMap {
@@ -32,12 +33,16 @@ export function TeamsPageClient() {
     inviteUser,
     removeMember,
     getMemberships,
+    getPendingInvitations,
   } = useTeams();
   const { selectedTeamId, setSelectedTeamId } = useApp();
 
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamMemberships, setTeamMemberships] = useState<TeamMembershipsMap>(
     {}
+  );
+  const [pendingInvitations, setPendingInvitations] = useState<Membership[]>(
+    []
   );
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -49,12 +54,17 @@ export function TeamsPageClient() {
     }
   }, [user, authLoading, router]);
 
-  // Load teams on mount
+  // Load teams and pending invitations on mount
   const loadTeams = useCallback(async () => {
     setLoading(true);
     try {
-      const fetchedTeams = await getTeams();
+      const [fetchedTeams, invitations] = await Promise.all([
+        getTeams(),
+        getPendingInvitations(),
+      ]);
+
       setTeams(fetchedTeams);
+      setPendingInvitations(invitations);
 
       // Load memberships for all teams in parallel
       const membershipsMap: TeamMembershipsMap = {};
@@ -62,7 +72,6 @@ export function TeamsPageClient() {
         fetchedTeams.map(async (team) => {
           try {
             const memberships = await getMemberships(team.$id);
-            console.log(`Memberships for team ${team.name}:`, memberships);
             membershipsMap[team.$id] =
               (memberships as unknown as TeamMember[]) || [];
           } catch (error) {
@@ -89,7 +98,7 @@ export function TeamsPageClient() {
     } finally {
       setLoading(false);
     }
-  }, [getTeams, getMemberships, toast]);
+  }, [getTeams, getMemberships, getPendingInvitations, toast]);
 
   useEffect(() => {
     if (user) {
@@ -160,9 +169,7 @@ export function TeamsPageClient() {
     userEmail: string
   ) => {
     try {
-      // Use Appwrite Teams API to invite by email
-      // This creates a membership and sends an invitation email
-      // Pass userName so it's stored in the membership
+      // Send email invitation (user must click link in email to accept)
       await inviteUser(
         teamId,
         userEmail,
@@ -170,14 +177,16 @@ export function TeamsPageClient() {
         `${
           process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
         }/teams/accept-invite`,
-        userName || undefined // Only pass name if provided
+        userName || undefined
       );
-      // Reload memberships for this team to show new pending member
+
+      // Reload memberships for this team to show new pending invitation
       const memberships = await getMemberships(teamId);
       setTeamMemberships({
         ...teamMemberships,
         [teamId]: (memberships as unknown as TeamMember[]) || [],
       });
+
       toast({
         title: "Success",
         description: `Invitation sent to ${userEmail}`,
@@ -191,7 +200,6 @@ export function TeamsPageClient() {
       throw new Error(message);
     }
   };
-
   const handleRemoveMember = async (teamId: string, membershipId: string) => {
     try {
       await removeMember(teamId, membershipId);
@@ -255,6 +263,13 @@ export function TeamsPageClient() {
           </p>
         </div>
       </div>
+
+      {/* Pending Invitations Section */}
+      <PendingInvitations
+        invitations={pendingInvitations}
+        onInvitationHandled={loadTeams}
+      />
+
       <TeamsView
         teams={teams}
         teamMemberships={teamMemberships}

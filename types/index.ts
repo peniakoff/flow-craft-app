@@ -26,7 +26,7 @@ export interface Issue extends AppwriteDBType {
   assignedUserId?: string // References Appwrite User.$id (UUID)
   teamId: string // References Team.$id
   priority: number // 1-5 range as per database constraints
-  projectId?: string // Local-only project reference (MVP, not persisted)
+  projectId?: string // References Project.$id
 }
 
 export interface Sprint extends AppwriteDBType {

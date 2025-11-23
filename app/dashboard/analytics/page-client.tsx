@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { Models } from "appwrite";
 import {
   Card,
   CardContent,
@@ -26,15 +27,7 @@ import {
   Line,
 } from "recharts";
 import { useApp } from "@/contexts/app-context";
-import { useTeams } from "@/contexts/teams-context";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
+import { DashboardPageLayout } from "@/components/dashboard/page-layout";
 import {
   Clock,
   Users,
@@ -43,6 +36,7 @@ import {
   AlertCircle,
   Calendar,
 } from "lucide-react";
+import { teams } from "@/lib/appwrite";
 
 interface EngineerStats {
   name: string;
@@ -73,34 +67,36 @@ const COLORS = [
 ];
 
 export function AnalyticsPageClient() {
-  const { issues, sprints, selectedTeamId, loading } = useApp();
-  const { teams } = useTeams();
+  const { issues, sprints, loading, selectedTeamId } = useApp();
+  const [teamMembers, setTeamMembers] = useState<Models.Membership[]>([]);
+  const [loadingMembers, setLoadingMembers] = useState(false);
 
-  const selectedTeamName = selectedTeamId
-    ? teams.find((team) => team.$id === selectedTeamId)?.name || "Team"
-    : "No team";
+  // Fetch team members when selectedTeamId changes
+  useEffect(() => {
+    if (selectedTeamId) {
+      setLoadingMembers(true);
+      teams
+        .listMemberships(selectedTeamId)
+        .then((response) => {
+          setTeamMembers(response.memberships);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch team members:", error);
+        })
+        .finally(() => {
+          setLoadingMembers(false);
+        });
+    }
+  }, [selectedTeamId]);
 
-  const breadcrumb = (
-    <Breadcrumb>
-      <BreadcrumbList>
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard/projects">Dashboard</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbLink href="/dashboard/teams">Team</BreadcrumbLink>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>{selectedTeamName}</BreadcrumbPage>
-        </BreadcrumbItem>
-        <BreadcrumbSeparator />
-        <BreadcrumbItem>
-          <BreadcrumbPage>Analytics</BreadcrumbPage>
-        </BreadcrumbItem>
-      </BreadcrumbList>
-    </Breadcrumb>
-  );
+  // Create a map of userId to userName for quick lookup
+  const userNameMap = useMemo(() => {
+    const map = new Map<string, string>();
+    teamMembers.forEach((member) => {
+      map.set(member.userId, member.userName || member.userEmail || "Unknown");
+    });
+    return map;
+  }, [teamMembers]);
 
   const engineerStats = useMemo((): EngineerStats[] => {
     const engineerMap = new Map<string, EngineerStats>();
@@ -110,7 +106,7 @@ export function AnalyticsPageClient() {
 
       if (!engineerMap.has(issue.assignedUserId)) {
         engineerMap.set(issue.assignedUserId, {
-          name: issue.assignedUserId,
+          name: userNameMap.get(issue.assignedUserId) || issue.assignedUserId,
           totalTasks: 0,
           completedTasks: 0,
           inProgressTasks: 0,
@@ -155,7 +151,7 @@ export function AnalyticsPageClient() {
           : 0,
       avgTasksPerSprint: stats.totalTasks / activeSprints,
     }));
-  }, [issues, sprints]);
+  }, [issues, sprints, userNameMap]);
 
   const sprintPerformance = useMemo((): SprintPerformance[] => {
     return sprints.map((sprint) => {
@@ -236,41 +232,23 @@ export function AnalyticsPageClient() {
       };
     }, [issues]);
 
-  if (!selectedTeamId) {
-    return (
-      <div className="space-y-4">
-        {breadcrumb}
-        <div className="text-center py-12">
-          <h2 className="text-2xl font-semibold mb-4">No Team Selected</h2>
-          <p className="text-muted-foreground">
-            Choose a working team to view detailed analytics.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {breadcrumb}
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </div>
-    );
-  }
+  const header = (
+    <div className="mb-8">
+      <h1 className="text-2xl font-semibold">Analytics Dashboard</h1>
+      <p className="text-muted-foreground">
+        Comprehensive insights into team performance and engineer utilization
+        together.
+      </p>
+    </div>
+  );
 
   return (
-    <div className="space-y-6">
-      {breadcrumb}
-      <div className="mb-8">
-        <h1 className="text-2xl font-semibold">Analytics Dashboard</h1>
-        <p className="text-muted-foreground">
-          Comprehensive insights into team performance and engineer utilization
-        </p>
-      </div>
-
+    <DashboardPageLayout
+      pageName="Analytics"
+      header={header}
+      loading={loading || loadingMembers}
+      emptyDescription="Choose a working team to view detailed analytics."
+    >
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <Card>
@@ -676,6 +654,6 @@ export function AnalyticsPageClient() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+    </DashboardPageLayout>
   );
 }

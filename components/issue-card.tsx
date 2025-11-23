@@ -56,9 +56,7 @@ export function IssueCard({
         <div className="flex items-start justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-mono text-muted-foreground">
-                {issue.$id}
-              </span>
+              <h3 className="font-medium leading-tight">{issue.title}</h3>
               <Badge
                 className={priorityColors[issue.priority]}
                 variant="secondary"
@@ -66,7 +64,6 @@ export function IssueCard({
                 P{issue.priority}
               </Badge>
             </div>
-            <h3 className="font-medium leading-tight">{issue.title}</h3>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

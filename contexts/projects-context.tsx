@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { useApp } from "@/contexts/app-context";
+import { useAuth } from "@/contexts/auth-context";
 import type { Issue, Project, ProjectStatus } from "@/types";
 import {
   fetchProjectsByTeamId,
@@ -62,7 +63,8 @@ const EMPTY_BUCKET: TeamProjectsBucket = {
 };
 
 export function ProjectsProvider({ children }: { children: ReactNode }) {
-  const { selectedTeamId, issues, setIssues } = useApp();
+  const { selectedTeamId, issues, handleEditIssue } = useApp();
+  const { user } = useAuth();
   const [projectsByTeam, setProjectsByTeam] = useState<
     Record<string, TeamProjectsBucket>
   >({});
@@ -110,7 +112,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   const loadProjects = useCallback(
     async (teamId: string) => {
       try {
-        const fetchedProjects = await fetchProjectsByTeamId(teamId);
+        const fetchedProjects = await fetchProjectsByTeamId(teamId, user?.$id);
         upsertBucket(teamId, (bucket) => ({
           ...bucket,
           projects: fetchedProjects,
@@ -119,7 +121,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         console.error("Failed to load projects:", error);
       }
     },
-    [upsertBucket]
+    [upsertBucket, user?.$id]
   );
 
   const createProject = useCallback(
@@ -202,35 +204,27 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      upsertBucket(bucketId, (bucket) => {
-        const filteredAssignments = Object.fromEntries(
-          Object.entries(bucket.assignments).filter(
-            ([, assignedProjectId]) => assignedProjectId !== projectId
-          )
-        );
+      // Find and update all issues assigned to this project
+      const projectIssueIds = Object.entries(
+        projectsByTeam[bucketId]?.assignments || {}
+      )
+        .filter(([, assignedProjectId]) => assignedProjectId === projectId)
+        .map(([issueId]) => issueId);
 
-        const projectIssueIds = Object.entries(bucket.assignments)
-          .filter(([, assignedProjectId]) => assignedProjectId === projectId)
-          .map(([issueId]) => issueId);
-
-        if (projectIssueIds.length > 0) {
-          const detachedIssues = issues.map((issue) =>
-            issue.$id && projectIssueIds.includes(issue.$id)
-              ? { ...issue, projectId: undefined }
-              : issue
-          );
-          setIssues(detachedIssues);
-        }
-
-        return {
-          projects: bucket.projects.filter(
-            (project) => project.$id !== projectId
-          ),
-          assignments: filteredAssignments,
-        };
+      // Update issues to remove projectId
+      projectIssueIds.forEach((issueId) => {
+        handleEditIssue({ $id: issueId, projectId: undefined });
       });
+
+      // Remove project from the list
+      upsertBucket(bucketId, (bucket) => ({
+        ...bucket,
+        projects: bucket.projects.filter(
+          (project) => project.$id !== projectId
+        ),
+      }));
     },
-    [findBucketByProjectId, issues, setIssues, upsertBucket]
+    [findBucketByProjectId, handleEditIssue, projectsByTeam, upsertBucket]
   );
 
   const assignIssueToProject = useCallback(
@@ -246,20 +240,10 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         throw new Error("Project not found");
       }
 
-      upsertBucket(selectedTeamId, (bucket) => ({
-        ...bucket,
-        assignments: {
-          ...bucket.assignments,
-          [issueId]: projectId,
-        },
-      }));
-
-      const updatedIssues = issues.map((issue) =>
-        issue.$id === issueId ? { ...issue, projectId } : issue
-      );
-      setIssues(updatedIssues);
+      // Update issue with projectId in database
+      handleEditIssue({ $id: issueId, projectId });
     },
-    [currentBucket.projects, issues, selectedTeamId, setIssues, upsertBucket]
+    [currentBucket.projects, selectedTeamId, handleEditIssue]
   );
 
   const removeIssueFromProject = useCallback(
@@ -268,20 +252,10 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         throw new Error("Select a team before removing assignments");
       }
 
-      upsertBucket(selectedTeamId, (bucket) => {
-        const { [issueId]: _, ...rest } = bucket.assignments;
-        return {
-          ...bucket,
-          assignments: rest,
-        };
-      });
-
-      const updatedIssues = issues.map((issue) =>
-        issue.$id === issueId ? { ...issue, projectId: undefined } : issue
-      );
-      setIssues(updatedIssues);
+      // Update issue to remove projectId in database
+      handleEditIssue({ $id: issueId, projectId: undefined });
     },
-    [issues, selectedTeamId, setIssues, upsertBucket]
+    [selectedTeamId, handleEditIssue]
   );
 
   const getProjectById = useCallback(
@@ -326,7 +300,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     loadProjects(selectedTeamId);
   }, [selectedTeamId, loadProjects]);
 
-  // Clean up issue assignments when issues change
+  // Sync project assignments from issues' projectId field
   useEffect(() => {
     if (!selectedTeamId) {
       return;
@@ -338,22 +312,23 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         return prev;
       }
 
-      const validIssueIds = new Set(
-        issues
-          .map((issue) => issue.$id)
-          .filter((id): id is string => Boolean(id))
-      );
+      // Build assignments from issues' projectId
+      const newAssignments: Record<string, string> = {};
+      for (const issue of issues) {
+        if (issue.$id && issue.projectId) {
+          newAssignments[issue.$id] = issue.projectId;
+        }
+      }
 
-      const filteredAssignments = Object.fromEntries(
-        Object.entries(bucket.assignments).filter(([issueId]) =>
-          validIssueIds.has(issueId)
-        )
-      );
+      // Check if assignments changed
+      const hasChanged =
+        Object.keys(newAssignments).length !==
+          Object.keys(bucket.assignments).length ||
+        Object.entries(newAssignments).some(
+          ([issueId, projectId]) => bucket.assignments[issueId] !== projectId
+        );
 
-      if (
-        Object.keys(filteredAssignments).length ===
-        Object.keys(bucket.assignments).length
-      ) {
+      if (!hasChanged) {
         return prev;
       }
 
@@ -361,7 +336,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
         ...prev,
         [selectedTeamId]: {
           ...bucket,
-          assignments: filteredAssignments,
+          assignments: newAssignments,
         },
       };
     });

@@ -117,13 +117,12 @@ export function AppSidebar() {
     {
       label: "Analytics",
       icon: BarChart3,
-      count: issues.filter((i) => i.status === "Done").length,
       href: "/dashboard/analytics",
     },
   ];
 
   return (
-    <Sidebar collapsible="icon" className="z-50">
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -180,7 +179,7 @@ export function AppSidebar() {
                     <TooltipTrigger asChild>
                       <Badge
                         variant="outline"
-                        className="ml-auto flex-1 min-w-0 text-xs cursor-default"
+                        className="ml-auto text-xs cursor-default max-w-[60%] overflow-hidden"
                       >
                         <span className="overflow-hidden text-ellipsis whitespace-nowrap">
                           {selectedTeam.name}

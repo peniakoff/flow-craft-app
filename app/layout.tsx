@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     "A complete task management app with sprints, kanban boards, and issue tracking",
   generator: "v0.app",
   icons: {
-    icon: "/favicon/favicon.ico",
+    icon: "/favicon/favicon.png",
   },
 };
 

@@ -33,7 +33,7 @@ interface RegisterFormProps {
 
 export function RegisterForm({
   onSuccess,
-  redirectTo = "/dashboard/issues",
+  redirectTo = "/dashboard/teams",
 }: RegisterFormProps) {
   const router = useRouter();
   const { register: registerUser, user, loading } = useAuth();

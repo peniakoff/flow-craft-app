@@ -132,7 +132,7 @@ function SidebarProvider({
             } as React.CSSProperties
           }
           className={cn(
-            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+            "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full max-w-full",
             className
           )}
           {...props}
@@ -158,15 +158,17 @@ function Sidebar({
 }) {
   const { isOverlay, state, setOpen } = useSidebar();
 
-  // On overlay viewports we always reserve only the icon rail width
-  // in the flex layout; the rest of the sidebar is a fixed overlay
-  // so it does not push the main content.
+  // On overlay viewports the sidebar should not reserve layout width.
+  // We keep the flex item collapsed to 0 and render the visible
+  // sidebar entirely via the fixed overlay container.
   const overlayShellStyle = React.useMemo(() => {
     if (!isOverlay) return undefined;
     return {
-      width: "var(--sidebar-width-icon)",
-      minWidth: "var(--sidebar-width-icon)",
-      maxWidth: "var(--sidebar-width-icon)",
+      width: 0,
+      minWidth: 0,
+      maxWidth: 0,
+      flexBasis: 0,
+      overflow: "hidden",
     } as React.CSSProperties;
   }, [isOverlay]);
 
@@ -187,7 +189,11 @@ function Sidebar({
 
   return (
     <div
-      className="group peer text-sidebar-foreground"
+      className={cn(
+        "group peer text-sidebar-foreground",
+        "max-sm:w-0 max-sm:min-w-0 max-sm:shrink-0",
+        isOverlay && "w-0 min-w-0 shrink-0"
+      )}
       data-state={state}
       data-collapsible={
         isOverlay
@@ -207,10 +213,12 @@ function Sidebar({
       {/* This is what handles the sidebar gap on desktop */}
       <div
         data-slot="sidebar-gap"
+        data-overlay={isOverlay ? "true" : "false"}
         className={cn(
           "relative bg-transparent transition-[width] duration-200 ease-linear",
+          "max-sm:w-0 max-sm:min-w-0 max-sm:flex-[0_0_0]",
           isOverlay
-            ? "w-(--sidebar-width-icon)"
+            ? "w-0"
             : cn(
                 "w-(--sidebar-width)",
                 "group-data-[collapsible=offcanvas]:w-0",
@@ -218,7 +226,8 @@ function Sidebar({
                 variant === "floating" || variant === "inset"
                   ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
                   : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
-              )
+              ),
+          "data-[overlay=true]:w-0 data-[overlay=true]:min-w-0 data-[overlay=true]:flex-[0_0_0]"
         )}
       />
       {/* Backdrop for overlay mode when expanded */}
@@ -322,6 +331,8 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
       data-slot="sidebar-inset"
       className={cn(
         "bg-background relative z-0 flex w-full flex-1 flex-col",
+        "max-sm:pl-(--sidebar-width-icon)",
+        "peer-data-[overlay=true]:pl-(--sidebar-width-icon)",
         "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
         className
       )}

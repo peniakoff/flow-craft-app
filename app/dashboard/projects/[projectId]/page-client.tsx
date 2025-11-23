@@ -94,7 +94,7 @@ export function ProjectDetailsPageClient({
       try {
         setIsLoading(true);
         setError(null);
-        const fetchedProject = await fetchProjectById(projectId);
+        const fetchedProject = await fetchProjectById(projectId, user?.$id);
 
         if (isMounted) {
           setProject(fetchedProject);
@@ -102,7 +102,9 @@ export function ProjectDetailsPageClient({
       } catch (err) {
         console.error("Failed to load project:", err);
         if (isMounted) {
-          setError("Failed to load project");
+          const errorMessage =
+            err instanceof Error ? err.message : "Failed to load project";
+          setError(errorMessage);
           setProject(null);
         }
       } finally {
@@ -117,7 +119,7 @@ export function ProjectDetailsPageClient({
     return () => {
       isMounted = false;
     };
-  }, [projectId]);
+  }, [projectId, user?.$id]);
 
   const projectProgress =
     project && project.$id ? getProjectProgress(project.$id) : 0;

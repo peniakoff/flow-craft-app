@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/auth-context";
 import { AppwriteException } from "appwrite";
+import Link from "next/link";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -26,7 +27,7 @@ interface LoginFormProps {
 
 export function LoginForm({
   onSuccess,
-  redirectTo = "/dashboard/issues",
+  redirectTo = "/dashboard/teams",
 }: LoginFormProps) {
   const router = useRouter();
   const { login, user, loading } = useAuth();
@@ -103,7 +104,15 @@ export function LoginForm({
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Password</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Password</Label>
+          <Link
+            href="/forgot-password"
+            className="text-xs text-muted-foreground hover:text-primary underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <Input
           id="password"
           type="password"

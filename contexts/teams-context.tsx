@@ -21,6 +21,7 @@ interface TeamsContextType {
   teams: Team[];
   teamsCount: number;
   getTeams: () => Promise<Team[]>;
+  getTeam: (teamId: string) => Promise<Team>;
   loadTeams: () => Promise<void>;
   createTeam: (
     name: string,
@@ -30,6 +31,7 @@ interface TeamsContextType {
   deleteTeam: (teamId: string) => Promise<void>;
   getMembers: (teamId: string) => Promise<TeamMember[]>;
   getMemberships: (teamId: string) => Promise<Membership[]>;
+  getPendingInvitations: () => Promise<Membership[]>;
   inviteUser: (
     teamId: string,
     email: string,
@@ -49,6 +51,7 @@ interface TeamsContextType {
     userId: string,
     secret: string
   ) => Promise<Membership>;
+  declineInvitation: (teamId: string, membershipId: string) => Promise<void>;
 }
 
 const TeamsContext = createContext<TeamsContextType | undefined>(undefined);
@@ -64,16 +67,44 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Get all teams for the current user
+   * Appwrite's teams.list() returns teams where the user has membership
    */
   const getTeams = useCallback(async (): Promise<Team[]> => {
     try {
+      // teams.list() in Appwrite returns all teams where user is a member
+      // It should include teams where user was invited and accepted
       const response = (await teamsSDK.list()) as TeamList;
+
+      // Debug logging
+      if (response.total === 0) {
+        console.warn(
+          "No teams found for user. This might indicate an issue with team memberships."
+        );
+      }
+
       return response.teams || [];
     } catch (error) {
       console.error("Failed to fetch teams:", error);
       throw error;
     }
   }, [teamsSDK]);
+
+  /**
+   * Get a single team by ID
+   * Useful for fetching team details when user has membership but team isn't in the list
+   */
+  const getTeam = useCallback(
+    async (teamId: string): Promise<Team> => {
+      try {
+        const team = (await teamsSDK.get(teamId)) as Team;
+        return team;
+      } catch (error) {
+        console.error(`Failed to fetch team ${teamId}:`, error);
+        throw error;
+      }
+    },
+    [teamsSDK]
+  );
 
   /**
    * Load teams and update state
@@ -188,7 +219,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
 
   /**
    * Invite a user to team via email
-   * This creates a membership with pending status and sends invitation email
+   * Sends invitation email which user must accept by clicking link
    */
   const inviteUser = useCallback(
     async (
@@ -201,6 +232,7 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
       name?: string
     ): Promise<Membership> => {
       try {
+        console.log(`Sending email invitation to ${email} for team ${teamId}`);
         const membership = (await teamsSDK.createMembership({
           teamId,
           roles,
@@ -260,6 +292,51 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
   );
 
   /**
+   * Get pending invitations for the current user
+   * NOTE: Appwrite teams.list() only returns teams where user has ACTIVE membership.
+   * Pending invitations are NOT visible through teams.list().
+   * This function is a workaround that won't find pending invitations until user accepts them.
+   * Users should use the email link to accept invitations.
+   */
+  const getPendingInvitations = useCallback(async (): Promise<Membership[]> => {
+    if (!user) {
+      return [];
+    }
+
+    try {
+      // Get all teams where user has active membership
+      const allTeams = await getTeams();
+      const pendingInvitations: Membership[] = [];
+
+      // Check each team for any pending memberships (edge case: re-invitations)
+      for (const team of allTeams) {
+        try {
+          const memberships = await getMemberships(team.$id);
+          const userMembership = memberships.find(
+            (m) => m.userId === user.$id && !m.confirm
+          );
+
+          if (userMembership) {
+            pendingInvitations.push(userMembership);
+          }
+        } catch (error) {
+          // Skip teams where we can't get memberships
+          continue;
+        }
+      }
+
+      console.log(
+        "getPendingInvitations: Total pending invitations found:",
+        pendingInvitations.length
+      );
+      return pendingInvitations;
+    } catch (error) {
+      console.error("Failed to fetch pending invitations:", error);
+      return []; // Return empty array instead of throwing to prevent page crashes
+    }
+  }, [user, getTeams, getMemberships]);
+
+  /**
    * Accept team invitation via email link
    * Called when user clicks link in invitation email
    */
@@ -286,19 +363,37 @@ export function TeamsProvider({ children }: { children: React.ReactNode }) {
     [teamsSDK]
   );
 
+  /**
+   * Decline team invitation
+   */
+  const declineInvitation = useCallback(
+    async (teamId: string, membershipId: string): Promise<void> => {
+      try {
+        await teamsSDK.deleteMembership({ teamId, membershipId });
+      } catch (error) {
+        console.error("Failed to decline invitation:", error);
+        throw error;
+      }
+    },
+    [teamsSDK]
+  );
+
   const value: TeamsContextType = {
     teams: userTeams,
     teamsCount,
     getTeams,
+    getTeam,
     loadTeams,
     createTeam,
     deleteTeam,
     getMembers,
     getMemberships,
+    getPendingInvitations,
     inviteUser,
     removeMember,
     updateMemberRoles,
     acceptInvitation,
+    declineInvitation,
   };
 
   return (

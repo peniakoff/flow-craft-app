@@ -357,12 +357,7 @@ export function ProjectsPageClient() {
                   ? teamNameMap.get(project.teamId) || "Team"
                   : "Private";
                 return (
-                  <TableRow
-                    key={project.$id}
-                    className={
-                      isOverdue(project) ? "bg-amber-50/50" : undefined
-                    }
-                  >
+                  <TableRow key={project.$id}>
                     <TableCell>
                       <div className="flex flex-col">
                         <div className="flex items-center gap-2">
@@ -406,9 +401,6 @@ export function ProjectsPageClient() {
                       <div className="flex flex-col">
                         <span className="font-medium">
                           {project.ownerName || "Unassigned"}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {project.ownerId}
                         </span>
                       </div>
                     </TableCell>

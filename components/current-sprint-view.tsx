@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users, Target } from "lucide-react";
 import { KanbanBoard } from "./kanban-board";
@@ -19,17 +18,14 @@ export function CurrentSprintView({
 }: CurrentSprintViewProps) {
   if (!sprint) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl font-semibold">Current Sprint</h1>
-        <div className="text-center py-12">
-          <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-            <Target className="h-12 w-12 text-muted-foreground" />
-          </div>
-          <h3 className="text-lg font-medium mb-2">No Active Sprint</h3>
-          <p className="text-muted-foreground">
-            Start a sprint from the Sprints view to see the kanban board here.
-          </p>
+      <div className="text-center py-12">
+        <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+          <Target className="h-12 w-12 text-muted-foreground" />
         </div>
+        <h3 className="text-lg font-medium mb-2">No Active Sprint</h3>
+        <p className="text-muted-foreground">
+          Start a sprint from the Sprints view to see the kanban board here.
+        </p>
       </div>
     );
   }
@@ -65,16 +61,6 @@ export function CurrentSprintView({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Current Sprint</h1>
-        <Badge
-          className="bg-green-100 text-green-800 border-green-200"
-          variant="outline"
-        >
-          Active
-        </Badge>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
